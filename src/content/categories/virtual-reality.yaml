@@ -1,6 +1,6 @@
-name: "Virtual reality simulators"
+name: "Virtual Reality Attractions"
 slug: virtual-reality
 summary: "Headset-based experiences, many on electric motion bases."
 description: "Virtual-reality attractions in which guests wear a headset, from seated motion simulators to walk-through experiences."
 order: 2
-status: review
+status: published

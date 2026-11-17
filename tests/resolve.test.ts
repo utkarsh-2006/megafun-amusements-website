@@ -173,3 +173,10 @@ test('gallery lists only approved, in-term images flagged for the gallery, in or
   assert.deepEqual(resolve(c, prod).gallery.map((m) => m.id), ['g1', 'g2']);
   assert.equal(resolve(c, { preview: true, now: NOW }).gallery.length, 3, 'preview adds pending placeholders');
 });
+
+test('enquiry categories: visible classifications with at least one non-retired product, names only', () => {
+  const c = empty();
+  c.categories.push(cat('a', { name: 'A', order: 2 }), cat('b', { name: 'B', order: 1 }), cat('empty', { name: 'Empty' }), cat('hidden', { status: 'review' }), cat('old'));
+  c.attractions.push(attr('x', 'a', [], { status: 'review' }), attr('y', 'b', []), attr('z', 'hidden', []), attr('r', 'old', [], { operationalStatus: 'retired' }));
+  assert.deepEqual(resolve(c, prod).enquiryCategories, [{ id: 'b', name: 'B' }, { id: 'a', name: 'A' }]);
+});

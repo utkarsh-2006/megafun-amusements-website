@@ -64,9 +64,22 @@ const idx = (s: string) => String(sections.indexOf(s) + 1).padStart(2, '0');
     <div class="stage on-dark">
       <div class="pointer-events-none absolute -top-40 -left-32 size-[34rem] rounded-full bg-brand-blue/25 blur-[120px]" aria-hidden="true"></div>
       <div class="pointer-events-none absolute -right-24 bottom-[-12rem] size-[30rem] rounded-full bg-brand-magenta/20 blur-[120px]" aria-hidden="true"></div>
-      <Ribbon draw="load" id="hero-ribbon" width={26} class="pointer-events-none absolute top-[38%] left-[-8%] w-[160%] max-w-none text-white sm:w-[125%] lg:top-[26%] lg:left-[-4%] lg:w-[108%]" />
+      <!--
+        Hero curve. Below lg (stacked layout) it keeps its original sizing. From lg up its box is set
+        in percentages of the hero panel (inset), and the SVG fits the whole curve inside that box
+        at its fixed 2:1 proportions ("xMaxYMax meet"): bottom-right anchored, never clipped,
+        whatever the panel's width/height ratio (browser zoom, 1366–2560px screens).
+      -->
+      <Ribbon
+        draw="load"
+        id="hero-ribbon"
+        width={26}
+        leadIn
+        align="xMaxYMax meet"
+        class="pointer-events-none absolute top-[38%] left-[-8%] w-[160%] max-w-none overflow-visible text-white sm:w-[125%] lg:top-[26%] lg:left-[-3%] lg:h-[81%] lg:w-[106%] xl:top-[24%] xl:h-[83%]"
+      />
 
-      <div class="wrap relative grid min-h-[min(88svh,56rem)] gap-14 pt-16 pb-12 lg:grid-cols-12 lg:items-center lg:gap-10 lg:pt-20 lg:pb-16">
+      <div class="wrap relative grid min-h-[min(88svh,56rem)] gap-14 pt-16 pb-12 lg:grid-cols-12 lg:items-center lg:gap-10 lg:pt-20 lg:pb-32">
         <div class:list={['relative', heroPicks.length ? 'lg:col-span-7' : 'lg:col-span-10']}>
           <!-- Descriptive H1 for search; the large line below is the visual tagline. -->
           <h1 id="hero-title" class="eyebrow max-w-[60ch] text-blue-300 [text-wrap:balance]" data-hero-line>{h.h1}</h1>
@@ -105,7 +118,7 @@ const idx = (s: string) => String(sections.indexOf(s) + 1).padStart(2, '0');
                   <a
                     href={`/attractions/${a.slug}/`}
                     class:list={[
-                      'group relative block overflow-hidden rounded-2xl ring-1 ring-white/10',
+                      'mf-glow group relative block overflow-hidden rounded-2xl ring-1 ring-white/10',
                       i === 0 && 'col-span-6 sm:col-span-4 sm:row-span-2',
                       i > 0 && 'col-span-3 sm:col-span-2',
                     ]}

@@ -11,7 +11,7 @@ Checked against Cloudflare's docs on 17 Nov 2026 (developers.cloudflare.com/page
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Node version | from `.nvmrc` (`22`). The v3 build image defaults to 22.23.4; Astro needs ≥ 22.23.4. You can also set `NODE_VERSION`. The v3 image does **not** read `package.json` `engines`. |
-| Functions | none (the site is fully static) |
+| Functions | `functions/api/enquiry.ts`, built automatically by Pages from the `functions/` folder (the enquiry endpoint only). Everything else is static. |
 | Adapter | none (`@astrojs/cloudflare` is only for SSR) |
 
 ## Environment variables
@@ -22,7 +22,19 @@ Checked against Cloudflare's docs on 17 Nov 2026 (developers.cloudflare.com/page
 | `PRODUCTION_BRANCH` | — | — | Only if the production branch is not `main` |
 | `PUBLIC_ANALYTICS_PROVIDER` / `PUBLIC_ANALYTICS_DOMAIN` | after approval | unset | Tracking also requires `analytics.approved = true` in code |
 
-`CONTENT_ROOT` (fixture libraries) must never be set on Cloudflare.
+| `PUBLIC_TURNSTILE_SITE_KEY` | Turnstile site key | Turnstile test key `1x00000000000000000000AA` (always passes) | Build-time, public |
+| `TURNSTILE_SECRET_KEY` | **secret** | test secret `1x0000000000000000000000000000000AA` | Runtime (Function) |
+| `RESEND_API_KEY` | **secret** | a separate Resend key, or leave unset (the card then shows "unavailable") | Runtime (Function) |
+| `ENQUIRY_TO` | company inbox | a test inbox | Runtime (Function) |
+| `ENQUIRY_FROM` | e.g. `Mega Fun Website <enquiries@megafunamusements.com>` (domain verified in Resend) | same | Runtime (Function) |
+
+`CONTENT_ROOT` (fixture libraries) must never be set on Cloudflare. Secrets are set in the Cloudflare dashboard only; never commit them (`.env*` is git-ignored).
+
+### Enquiry email setup (one-time)
+
+1. **Resend:** add and verify the sending domain (DNS records for `megafunamusements.com`). Create an API key limited to sending. Set `RESEND_API_KEY`, `ENQUIRY_FROM` and `ENQUIRY_TO`.
+2. **Turnstile:** create a widget for the production hostname(s) in the Cloudflare dashboard. Set `PUBLIC_TURNSTILE_SITE_KEY` (Production, build variable) and `TURNSTILE_SECRET_KEY` (secret).
+3. Redeploy. Send a test enquiry from `/contact/`. Until all four runtime values exist, the card responds "Sending from this page isn't available right now…" and keeps the visitor's input; WhatsApp, email and phone still work.
 
 ## What each deployment shows
 

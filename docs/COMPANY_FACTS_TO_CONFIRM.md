@@ -56,6 +56,10 @@ Also supply quality, safety, warranty and after-sales information. These section
 
 Projects and installations (with client disclosure permission), credentials and certifications (issuer, validity, permission to display), news articles, the capability profile PDF, and the full media library and its rights.
 
+## Enquiry sending (owner decision, 18 Nov 2026)
+
+The Contact card now sends enquiries through a Cloudflare Pages Function, Turnstile and Resend. **To do before it works in production:** verify the sending domain in Resend; create the Resend API key and Turnstile widget; set the five environment values (see DEPLOYMENT.md); confirm the receiving inbox (`ENQUIRY_TO`). Note: the card collects a name and an optional phone number only, with no email address, so enquiries sent without a phone number cannot be answered. Consider making the phone number required, or adding an email field.
+
 ## Legal / analytics
 
 - The Privacy page (`src/pages/privacy.astro`) describes only how the site works. It needs company and legal review, then set `legalApproved = true`.

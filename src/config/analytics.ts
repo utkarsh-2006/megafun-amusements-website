@@ -7,11 +7,9 @@ export const analyticsEvents = [
   'contact_page_view',
   'project_cta_click',
   'specification_cta_click',
+  /** Contact card: enquiry accepted by the server (never includes the enquiry content). */
+  'enquiry_submitted',
   'mailto_open',
-  'gmail_compose_open',
-  'outlook_compose_open',
-  'copy_email',
-  'copy_message',
   'phone_click',
   'whatsapp_open',
   'capability_profile_download',

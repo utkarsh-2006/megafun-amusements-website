@@ -148,3 +148,57 @@ html.motion-ok [data-reveal] { opacity: 0; transform: translateY(24px); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/*
+ * Animated gradient border — a thin arc of the brand gradient travelling around a card's edge.
+ * Usage: add `mf-glow` to a positioned, rounded element (it inherits the radius). The ring is an
+ * ::after pseudo-element masked to its 1.5px padding box, so only the border shows; it ignores
+ * pointer events, so links and hover behave as before. The angle animates through a registered
+ * custom property (Chromium, Safari 16.4+, Firefox 128+); browsers without @property show a
+ * static arc. One compositor-friendly animation per card, no JavaScript.
+ */
+@property --mf-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.mf-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--mf-angle),
+    transparent 0deg 200deg,
+    rgb(25 131 241 / 0.85) 250deg,
+    rgb(163 82 237 / 0.95) 295deg,
+    rgb(227 50 241 / 0.9) 335deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0.55;
+  pointer-events: none;
+  animation: mf-orbit 10s linear infinite;
+  transition: opacity 0.4s var(--ease-out-quint);
+}
+.mf-glow:hover::after,
+.group:hover .mf-glow::after,
+.group:focus-within .mf-glow::after {
+  opacity: 0.9;
+}
+@keyframes mf-orbit {
+  to {
+    --mf-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The global rule shortens durations, which would make an infinite loop flicker; stop it instead. */
+  .mf-glow::after {
+    animation: none !important;
+    --mf-angle: 135deg;
+  }
+}

@@ -9,14 +9,24 @@ interface Props {
   draw?: 'load' | 'scroll' | 'none';
   id?: string;
   width?: number;
+  /** SVG preserveAspectRatio. The hero uses 'xMaxYMax meet' so the whole curve always fits its box. */
+  align?: string;
+  /**
+   * Prepend an off-canvas lead-in that continues the tail smoothly to the left (same tangent as
+   * the visible start). Use with `overflow-visible` so the sweep still reaches the container's
+   * left edge when 'meet' scales the curve down. The visible shape is unchanged.
+   */
+  leadIn?: boolean;
 }
-const { class: cls = '', draw = 'none', id = 'ribbon', width = 22 } = Astro.props;
-const d =
-  'M-40 470 C 140 520, 300 360, 470 392 S 760 572, 905 430 S 1060 150, 950 118 C 860 92, 820 222, 905 246 C 962 262, 1000 196, 958 178 C 930 166, 905 196, 925 210';
+const { class: cls = '', draw = 'none', id = 'ribbon', width = 22, align = 'xMidYMid meet', leadIn = false } = Astro.props;
+const body =
+  'C 140 520, 300 360, 470 392 S 760 572, 905 430 S 1060 150, 950 118 C 860 92, 820 222, 905 246 C 962 262, 1000 196, 958 178 C 930 166, 905 196, 925 210';
+// The lead-in ends at the original start point (-40,470) with tangent (180,50), matching the first curve.
+const d = leadIn ? `M-760 560 C-560 560, -220 420, -40 470 ${body}` : `M-40 470 ${body}`;
 const attr = draw === 'load' ? { 'data-draw': '' } : draw === 'scroll' ? { 'data-draw-scroll': '' } : {};
 ---
 
-<svg viewBox="0 0 1200 600" fill="none" aria-hidden="true" focusable="false" class={cls} preserveAspectRatio="xMidYMid meet">
+<svg viewBox="0 0 1200 600" fill="none" aria-hidden="true" focusable="false" class={cls} preserveAspectRatio={align}>
   <defs>
     <linearGradient id={`${id}-g`} x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#1983f1" />

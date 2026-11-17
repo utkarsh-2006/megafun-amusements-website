@@ -79,9 +79,33 @@ src/content/**  ──getCollection──▶  src/lib/content.ts  ──▶  res
 
 `Gallery.astro` takes any list of Media records. Desktop shows 4 per page, tablet 2 and mobile 1. Only the first item of each page is a scroll-snap point, so swiping, mouse drag, the previous and next buttons, the dots and ←/→ (with the track focused) all move one page at a time. Hidden filler slots complete the last page so it starts on a group boundary. The status reads "Page x of y · Images a–b of n". Images open in the shared `Lightbox`. Without JS it is a native scrollable strip, and the controls stay hidden. The data comes from `resolve().gallery`: images with `gallery: true`, approved and in-term (pending ones too in preview), ordered by `galleryOrder`.
 
-## Contact enquiry state
+## Contact enquiry (Pages Function)
 
-One product state is shared by every `select[data-product]`, and it persists across intent changes until cleared. The draft body is editable. Once the visitor edits it, it is kept (subject and links still update), and "Rebuild from form" restores the generated text. Mailto, Gmail, Outlook and WhatsApp links are rebuilt on every change. WhatsApp text comes from `whatsappText()`, or from the edited body once the visitor has edited it.
+```
+contact card (src/scripts/contact.ts) ──POST JSON──▶ functions/api/enquiry.ts
+   category id · name · phone · intent · message (edited) · Turnstile token · honeypot
+                                                    ├─ same-origin, JSON, ≤4 KB, honeypot
+                                                    ├─ validateEnquiry() vs /enquiry-options.json (env.ASSETS)
+                                                    ├─ Turnstile siteverify (TURNSTILE_SECRET_KEY)
+                                                    └─ exact message + details block → Resend (RESEND_API_KEY) → ENQUIRY_TO
+```
+
+- The message box starts with a suggested draft (`composeEnquiry()`) that follows category, name and phone until the visitor edits it. After that their text is never overwritten; "Restore suggested message" brings the draft back. The server sends the visitor's exact message (normalised line endings, control characters removed, at most 3000 characters), then an "Enquiry details" block (name, phone, category, enquiry type). The subject is generated (`enquirySubject()`), as shown in the card. Nothing is stored.
+- Responses: `200 {ok:true}`, or `{ok:false,error}` where `error` is `invalid` (422, with field names), `verification`, `unavailable` (503, configuration missing), `send` (502) or `bad-request`. The card shows a matching message and keeps the inputs.
+- Turnstile runs in `interaction-only` mode, so it is invisible unless Cloudflare needs a challenge. Its script loads only on /contact/ and only when `PUBLIC_TURNSTILE_SITE_KEY` is set.
+- Tests: `tests/enquiry-function.test.ts` (mocked Turnstile, Resend and assets) and `tests/enquiry.test.ts`.
+
+## Header mega-menu
+
+`Header.astro`: when at least one category has published products, "Attractions" becomes a link plus a separate chevron button (`aria-expanded`, `aria-controls="mega-attractions"`). Mouse hover opens a full-width panel under the sticky header, with one column per category (published products, then "View all" → the category page or `/attractions/#slug`). Leaving the item and panel closes it after 160 ms, as do Escape (focus returns to the chevron), focus leaving, a click outside, or following a link. Keyboard users follow the disclosure pattern: Tab passes the item; Enter or Space on the chevron opens the panel. Touch devices never open it on hover. On mobile the sheet shows the "Attractions" link plus an expand button for the same groups. With nothing published, Attractions stays a plain link (no empty menu).
+
+## Card highlight
+
+`.mf-glow` (global.css) is a reusable animated border. A masked `::after` ring with a conic-gradient arc rotates through a registered `@property --mf-angle` (10 s per turn; opacity 0.55, 0.9 on hover). It ignores pointer events and does not animate under reduced motion. It is applied to attraction cards and the hero's featured-attraction tiles only.
+
+## Hero curve
+
+From `lg` up, the ribbon SVG is placed in a percentage box inside the hero (`top 24% / left −3% / 106% × 83%`; 26% / 81% at `lg`) with `preserveAspectRatio="xMaxYMax meet"`. The whole curve therefore keeps the same proportions and stays inside the panel at any width-to-height ratio (browser zoom, 1280–2560 px screens). An off-canvas `leadIn` continues the tail to the left edge. Measured with the curve fully visible at 2133, 1920, 1536, 1440, 1366 and 1280 px widths, clearing the CTA by at least 34 px.
 
 ## Office map
 
@@ -89,9 +113,9 @@ One product state is shared by every `select[data-product]`, and it persists acr
 
 ## Enquiries
 
-- `src/lib/enquiry.ts` (pure, tested): `parseContext()`, `contactHref()`, `composeDraft()`, `mailtoHref()`, `gmailHref()`, `outlookHref()`.
-- Contact page without JS: four static mailto routes with prefilled subjects, plus the email and phone. With JS, `src/scripts/contact.ts` reveals the builder, preselects intent, attraction and venue from the query, and updates a live draft with mailto, copy, Gmail and Outlook actions.
-- Source pages also print a direct `mailto:` with a contextual subject, so context survives without JS.
+- `src/lib/enquiry.ts` (pure, tested): `parseContext()`, `contactHref()`, `composeEnquiry()`, `validateEnquiry()`, `whatsappText()`/`whatsappHref()`, plus `composeDraft()`/`mailtoHref()` for the "Prefer email?" links on attraction pages.
+- Contact page: context (`?intent=&source=&item=`) sets the enquiry type and preselects the classification (a category slug, or a publishable product's primary category). Without JS the card is hidden, and the left column's email, phone and WhatsApp details are the route.
+- Source pages also print a direct `mailto:` with a contextual subject.
 - `EmailLink.astro` entity-encodes the address as basic protection against naive scrapers. It does not prevent harvesting.
 
 ## Analytics

@@ -1,44 +1,40 @@
 ---
 /**
  * Contact — exactly two major sections:
- *   1. #enquiry  Contact & enquiry: intro, direct contact details and enquiry controls (left),
- *                draft email card with product selector, email and WhatsApp actions (right).
+ *   1. #enquiry  LEFT: informational (intro, email, phone, WhatsApp). RIGHT: the enquiry card —
+ *                category selector, name + phone, live email preview, Send Enquiry (sent from the
+ *                page via the Pages Function functions/api/enquiry.ts → Turnstile → Resend), WhatsApp.
  *   2. #office   Office location map.
- * No server-side form: the page composes a draft the visitor sends themselves. Without JS the
- * static mailto routes (right column) and the contact details are the complete experience.
+ * Without JS the card cannot send (Turnstile needs JS); a short fallback points to the direct
+ * contact details on the left.
  */
-import { Mail, Phone, Copy, ExternalLink, Download, MapPin, MessageCircle, RotateCcw } from '@lucide/astro';
+import { Mail, Phone, MessageCircle, Send, Download } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import OfficeMap from '../components/OfficeMap.astro';
 import EmailLink from '../components/EmailLink.astro';
-import DraftFlag from '../components/DraftFlag.astro';
 import { site } from '../lib/content.ts';
-import { intents, intentLabels, composeDraft, whatsappHref, whatsappText, type Intent } from '../lib/enquiry.ts';
+import { composeEnquiry, whatsappHref, whatsappText } from '../lib/enquiry.ts';
 import { company, publicContact } from '../config/company.ts';
 
 const r = await site();
-const intentHelp: Record<Intent, string> = {
-  project: 'Planning a new venue, zone or attraction.',
-  specification: 'Technical details for a specific attraction.',
-  service: 'Support for an attraction you already operate.',
-  general: 'Suppliers, partners and everything else.',
-};
-const staticDrafts = intents.map((i) => ({ intent: i, ...composeDraft(i, {}) }));
-const venues = r.venues.map((v) => ({ value: v.slug, label: v.name }));
-// Only publishable attractions (drafts appear in preview builds only).
-const products = r.attractions.filter((a) => a.operationalStatus === 'active').map((a) => ({ value: a.slug, label: a.name }));
+const categories = r.enquiryCategories;
+// Context links from attraction pages carry a product slug; map it to its classification (publishable products only).
+const productCategory = Object.fromEntries(r.attractions.map((a) => [a.slug, a.primaryCategory]));
 const wa = company.contact.whatsapp.value;
-const waStatic = wa ? whatsappHref(wa, whatsappText('general', {})) : '';
+const waDisplay = publicContact.phone.display;
+const initial = composeEnquiry({ intent: 'project', name: '' });
+const waStatic = wa ? whatsappHref(wa, whatsappText({ intent: 'general', name: '' }).replace('\n[Your name]', '')) : '';
+const turnstileKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
 const loc = company.contact.location;
-const field = 'mt-2 block w-full rounded-xl border border-line-strong bg-white px-4 py-3 text-[1rem] transition-colors focus:border-brand-deep focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-violet/20';
-const label = 'text-[0.9rem] font-semibold';
+const input =
+  'mt-1.5 block w-full rounded-xl border border-line-strong bg-white px-3.5 py-2.5 text-[0.95rem] transition-colors focus:border-brand-deep focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-violet/20 aria-[invalid=true]:border-red-600';
 const detailLabel = 'block text-[0.8rem] font-semibold tracking-[0.08em] text-muted uppercase';
 ---
 
 <Base
   title="Contact"
-  description="Contact Mega Fun Amusements: email, phone, WhatsApp, our Chennai office location and a guided enquiry for projects, specifications and service."
+  description="Contact Mega Fun Amusements: send an enquiry from this page, email, phone or WhatsApp us, and find our Chennai office."
   pageType="contact"
 >
   <script is:inline>
@@ -51,16 +47,16 @@ const detailLabel = 'block text-[0.8rem] font-semibold tracking-[0.08em] text-mu
     <div class="wrap pt-8 pb-16 lg:pt-10 lg:pb-24">
       <Breadcrumbs items={[{ label: 'Contact' }]} />
       <div class="mt-10 grid gap-12 lg:mt-14 lg:grid-cols-12 lg:gap-14">
-        <!-- Left: introduction, direct details, enquiry controls -->
-        <div class="lg:col-span-7">
+        <!-- Left: informational only -->
+        <div class="lg:col-span-6 xl:col-span-7">
           <p class="eyebrow text-blue-700" data-hero-line>Contact</p>
           <h1 id="contact-title" class="t-display mt-5 max-w-[16ch]" data-hero-line>Discuss a project, or just get in touch</h1>
-          <p class="t-lead mt-6 max-w-[56ch] text-muted" data-hero-line>
-            New projects, specification requests, support for installed attractions and general questions all start here. Choose what you need and we prepare a
-            draft for you to review and send.
+          <p class="t-lead mt-6 max-w-[52ch] text-muted" data-hero-line>
+            Choose the type of attraction you're interested in, add your name and send your enquiry straight from this page. Or reach us directly by email, phone
+            or WhatsApp.
           </p>
 
-          <dl class="mt-10 grid gap-x-8 gap-y-6 rounded-[var(--radius-card)] border border-line bg-white p-6 sm:grid-cols-2 lg:p-8" data-hero-line>
+          <dl class="mt-10 grid max-w-xl gap-6 rounded-[var(--radius-card)] border border-line bg-white p-6 lg:p-8" data-hero-line>
             <div class="flex gap-3">
               <Mail class="mt-0.5 size-5 shrink-0 text-brand-violet" aria-hidden="true" />
               <div><dt class={detailLabel}>Email</dt><dd class="mt-1 font-semibold [overflow-wrap:anywhere]"><EmailLink class="hover:text-blue-700" source="contact" /></dd></div>
@@ -76,135 +72,92 @@ const detailLabel = 'block text-[0.8rem] font-semibold tracking-[0.08em] text-mu
                   <div>
                     <dt class={detailLabel}>WhatsApp</dt>
                     <dd class="mt-1 font-semibold">
-                      <a href={waStatic} target="_blank" rel="noopener" class="hover:text-blue-700" data-track="whatsapp_open" data-track-source="contact">Message us on WhatsApp</a>
-                      <DraftFlag when={!company.contact.whatsapp.confirmed} />
-                    </dd>
-                  </div>
-                </div>
-              )
-            }
-            {
-              loc.verified && (
-                <div class="flex gap-3 sm:col-span-2">
-                  <MapPin class="mt-0.5 size-5 shrink-0 text-brand-violet" aria-hidden="true" />
-                  <div>
-                    <dt class={detailLabel}>Office</dt>
-                    <dd class="mt-1">
-                      <address class="not-italic">{company.contact.address.value.join(', ')}</address>
-                      <a href="#office" class="link mt-1 inline-block text-[0.9rem]">See the map</a>
+                      <a href={waStatic} target="_blank" rel="noopener" class="hover:text-blue-700" data-track="whatsapp_open" data-track-source="contact">{waDisplay}</a>
                     </dd>
                   </div>
                 </div>
               )
             }
           </dl>
-
-          <!-- Enquiry controls (JS) -->
-          <div class="mt-12" data-builder-controls hidden>
-            <fieldset>
-              <legend class="text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">I am contacting you about</legend>
-              <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                {
-                  intents.map((i) => (
-                    <label class="relative flex cursor-pointer flex-col rounded-2xl border border-line-strong bg-white p-5 transition-colors has-checked:border-brand-deep has-checked:bg-brand-deep/[0.04] has-focus-visible:ring-4 has-focus-visible:ring-brand-violet/25">
-                      <input type="radio" name="intent" value={i} class="peer sr-only" checked={i === 'project'} />
-                      <span class="font-semibold">{intentLabels[i]}</span>
-                      <span class="mt-1 text-[0.9rem] text-muted">{intentHelp[i]}</span>
-                      <span class="absolute top-5 right-5 size-4 rounded-full border-2 border-line-strong peer-checked:border-[5px] peer-checked:border-brand-deep" aria-hidden="true" />
-                    </label>
-                  ))
-                }
-              </div>
-            </fieldset>
-
-            <div class="mt-10 grid gap-6 sm:grid-cols-2">
-              <p class="text-[0.9rem] text-muted sm:col-span-2">All fields are optional. Add as much or as little as you like.</p>
-              <label class="block"><span class={label}>Your name</span><input class={field} name="name" autocomplete="name" /></label>
-              <label class="block"><span class={label}>Company</span><input class={field} name="company" autocomplete="organization" /></label>
-              {
-                products.length > 0 && (
-                  <label class="block">
-                    <span class={label}>Attraction of interest</span>
-                    <select class={field} name="attraction" data-product>
-                      <option value="">Not sure yet</option>
-                      {products.map((a) => <option value={a.value}>{a.label}</option>)}
-                    </select>
-                  </label>
-                )
-              }
-              <label class="block" data-for="project">
-                <span class={label}>Venue type</span>
-                <select class={field} name="venue">
-                  <option value="">Select…</option>
-                  {venues.map((v) => <option value={v.value}>{v.label}</option>)}
-                  <option value="other">Other</option>
-                </select>
-              </label>
-              <label class="block" data-for="project"><span class={label}>Location</span><input class={field} name="location" placeholder="City, country" autocomplete="address-level2" /></label>
-              <label class="block" data-for="project">
-                <span class={label}>Timeline</span>
-                <select class={field} name="timeline">
-                  <option value="">Select…</option>
-                  <option>Within 6 months</option>
-                  <option>6–12 months</option>
-                  <option>More than 12 months</option>
-                  <option>Still exploring</option>
-                </select>
-              </label>
-              <label class="block sm:col-span-2" data-for="project">
-                <span class={label}>Known site constraints</span>
-                <textarea class={field} name="constraints" rows="3" placeholder="Approximate area, ceiling height, power, indoor/outdoor…"></textarea>
-              </label>
-              <label class="block sm:col-span-2" data-for="specification service general">
-                <span class={label}>Message</span>
-                <textarea class={field} name="message" rows="4"></textarea>
-              </label>
-            </div>
-          </div>
         </div>
 
-        <!-- Right: draft email card (JS) / static routes (no JS) -->
-        <div class="lg:col-span-5">
-          <ul class="grid gap-4" data-static-routes>
-            {
-              staticDrafts.map((d) => (
-                <li class="rounded-[var(--radius-card)] border border-line bg-white p-6">
-                  <h2 class="font-semibold">{intentLabels[d.intent]}</h2>
-                  <p class="mt-1 text-[0.95rem] text-muted">{intentHelp[d.intent]}</p>
-                  <p class="mt-4"><EmailLink class="link" source="contact" subject={d.subject} body={d.body} label={`Email: ${d.subject}`} /></p>
-                </li>
-              ))
-            }
-          </ul>
+        <!-- Right: the enquiry card -->
+        <div class="lg:col-span-6 xl:col-span-5">
+          <noscript>
+            <div class="rounded-[var(--radius-stage)] border border-line bg-white p-6 lg:p-8">
+              <p class="font-semibold">Sending from this page needs JavaScript.</p>
+              <p class="mt-2 text-muted">Please email, call or WhatsApp us using the details on this page.</p>
+            </div>
+          </noscript>
 
-          <div class="rounded-[var(--radius-stage)] border border-line bg-white p-6 shadow-lift lg:sticky lg:top-28 lg:p-8" data-builder-card hidden aria-labelledby="h-draft" aria-describedby="builder-note" role="group">
-            <h2 id="h-draft" class="text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">Your draft message</h2>
+          <form
+            class="relative rounded-[var(--radius-stage)] border border-line bg-white p-6 shadow-lift lg:sticky lg:top-28 lg:p-8"
+            action="/api/enquiry"
+            method="post"
+            novalidate
+            hidden
+            data-enquiry
+            data-turnstile-key={turnstileKey}
+            data-product-category={JSON.stringify(productCategory)}
+            aria-labelledby="h-enquiry"
+            aria-describedby="enquiry-note"
+          >
+            <h2 id="h-enquiry" class="text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">Your enquiry</h2>
+
             {
-              products.length > 0 && (
+              categories.length > 0 && (
                 <label class="mt-5 block">
-                  <span class="text-[0.9rem] font-semibold">Select a product</span>
-                  <select class={field} data-product aria-describedby="product-hint">
-                    <option value="">No specific product</option>
-                    {products.map((a) => <option value={a.value}>{a.label}</option>)}
+                  <span class="text-[0.85rem] font-semibold">Select attraction category</span>
+                  <select name="category" class={input}>
+                    <option value="">Any / not sure yet</option>
+                    {categories.map((c) => <option value={c.id}>{c.name}</option>)}
                   </select>
-                  <span id="product-hint" class="mt-1 block text-[0.8rem] text-muted">Adds the attraction to the subject and message.</span>
                 </label>
               )
             }
-            <dl class="mt-5 space-y-3 text-[0.95rem]">
-              <div class="flex gap-3"><dt class="w-16 shrink-0 text-muted">To</dt><dd class="font-semibold break-all" data-out-to></dd></div>
-              <div class="flex gap-3"><dt class="w-16 shrink-0 text-muted">Subject</dt><dd class="font-semibold" data-out-subject></dd></div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <label class="block">
+                <span class="text-[0.85rem] font-semibold">Your name <span class="text-muted" aria-hidden="true">*</span></span>
+                <input name="name" class={input} autocomplete="name" required maxlength="80" aria-describedby="err-name" />
+                <span id="err-name" class="mt-1 block text-[0.8rem] font-semibold text-red-700" data-error="name"></span>
+              </label>
+              <label class="block">
+                <span class="text-[0.85rem] font-semibold">Phone number <span class="font-normal text-muted">(optional)</span></span>
+                <input name="phone" type="tel" class={input} autocomplete="tel" inputmode="tel" maxlength="24" aria-describedby="err-phone" />
+                <span id="err-phone" class="mt-1 block text-[0.8rem] font-semibold text-red-700" data-error="phone"></span>
+              </label>
+            </div>
+            <!-- Honeypot for bots; hidden from people and assistive tech. -->
+            <div class="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+              <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+            </div>
+
+            <dl class="mt-5 space-y-2 border-t border-line pt-5 text-[0.9rem]">
+              <div class="flex gap-3"><dt class="w-16 shrink-0 text-muted">To</dt><dd class="font-semibold">Mega Fun Amusements team</dd></div>
+              <div class="flex gap-3"><dt class="w-16 shrink-0 text-muted">Subject</dt><dd class="font-semibold" data-out-subject>{initial.subject}</dd></div>
             </dl>
-            <label class="mt-4 block">
-              <span class="flex items-center justify-between gap-3 text-[0.8rem] text-muted">
-                <span>Message — you can edit it here</span>
-                <button type="button" class="inline-flex items-center gap-1 font-semibold text-blue-700 hover:underline" data-reset hidden><RotateCcw class="size-3.5" aria-hidden="true" /> Rebuild from form</button>
+            <label class="mt-3 block">
+              <span class="flex items-baseline justify-between gap-3">
+                <span class="text-[0.85rem] font-semibold">Message</span>
+                <button type="button" class="text-[0.8rem] font-semibold text-blue-700 underline-offset-4 hover:underline" data-restore hidden>Restore suggested message</button>
               </span>
-              <textarea rows="9" class="mt-2 w-full resize-y rounded-xl border border-line bg-paper p-4 font-sans text-[0.9rem] leading-relaxed focus:border-brand-deep focus:outline-none" data-out-body></textarea>
+              <textarea
+                name="message"
+                rows="11"
+                maxlength="3000"
+                class="mt-1.5 block w-full resize-y rounded-xl border border-line bg-paper px-5 py-4 text-[0.92rem] leading-relaxed transition-colors focus:border-brand-deep focus:bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-violet/20 aria-[invalid=true]:border-red-600"
+                aria-describedby="err-message message-hint"
+                data-out-body>{initial.text}</textarea>
+              <span id="message-hint" class="mt-1 block text-[0.8rem] text-muted">Written for you from your details. Edit it freely; this is exactly what we receive.</span>
+              <span id="err-message" class="mt-1 block text-[0.8rem] font-semibold text-red-700" data-error="message"></span>
             </label>
-            <a href="#enquiry" class="btn btn-primary mt-5 w-full" data-out-mailto data-track="mailto_open" data-track-source="contact">
-              <Mail aria-hidden="true" /> Open in my email app
-            </a>
+
+            <div class="mt-4 empty:hidden" data-turnstile></div>
+
+            <button type="submit" class="btn btn-primary mt-5 w-full disabled:cursor-not-allowed disabled:opacity-70" data-send>
+              <Send aria-hidden="true" /> <span data-send-label>Send Enquiry</span>
+            </button>
             {
               wa && (
                 <a href={waStatic} target="_blank" rel="noopener" class="btn btn-outline mt-2 w-full border-brand-deep/40" data-out-whatsapp data-track="whatsapp_open" data-track-source="contact">
@@ -212,18 +165,12 @@ const detailLabel = 'block text-[0.8rem] font-semibold tracking-[0.08em] text-mu
                 </a>
               )
             }
-            <div class="mt-3 grid grid-cols-2 gap-2">
-              <button type="button" class="btn btn-outline min-h-11 px-3 text-[0.875rem]" data-copy="email" data-track="copy_email" data-track-source="contact"><Copy aria-hidden="true" /> Copy address</button>
-              <button type="button" class="btn btn-outline min-h-11 px-3 text-[0.875rem]" data-copy="message" data-track="copy_message" data-track-source="contact"><Copy aria-hidden="true" /> Copy message</button>
-              <a href="https://mail.google.com/" target="_blank" rel="noopener" class="btn btn-outline min-h-11 px-3 text-[0.875rem]" data-out-gmail data-track="gmail_compose_open" data-track-source="contact">Gmail <ExternalLink aria-hidden="true" /></a>
-              <a href="https://outlook.office.com/" target="_blank" rel="noopener" class="btn btn-outline min-h-11 px-3 text-[0.875rem]" data-out-outlook data-track="outlook_compose_open" data-track-source="contact">Outlook <ExternalLink aria-hidden="true" /></a>
-            </div>
-            <p class="mt-4 min-h-6 text-[0.875rem] font-semibold text-brand-deep" role="status" data-status></p>
-            <p id="builder-note" class="mt-1 text-[0.85rem] text-muted">
-              Nothing is sent from this website. Your email app or WhatsApp opens with the message ready; review it and press send. If nothing opens, copy the address
-              and message instead, or call <a href={`tel:${publicContact.phone.tel}`} class="link" data-track="phone_click" data-track-source="contact">{publicContact.phone.display}</a>.
+            <p class="mt-4 min-h-5 text-[0.875rem] font-semibold" role="status" aria-live="polite" data-status></p>
+            <p id="enquiry-note" class="mt-1 text-[0.8rem] text-muted">
+              Your enquiry is sent directly to our team from this page. Add a phone number so we can call or message you back. WhatsApp opens with the same message
+              for you to send.
             </p>
-          </div>
+          </form>
         </div>
       </div>
 
@@ -237,14 +184,6 @@ const detailLabel = 'block text-[0.8rem] font-semibold tracking-[0.08em] text-mu
             <a href={`/documents/${r.capabilityProfile.file}`} download class="btn btn-outline" data-track="capability_profile_download" data-track-source="contact">
               <Download aria-hidden="true" /> Download profile
             </a>
-          </div>
-        )
-      }
-      {
-        company.contact.responseProcess.confirmed && (
-          <div class="mt-16 max-w-2xl">
-            <h2 class="t-h3">What happens next</h2>
-            <p class="mt-3 text-muted">{company.contact.responseProcess.value}</p>
           </div>
         )
       }

@@ -1,13 +1,29 @@
 ---
-import { Menu, X, ArrowRight } from '@lucide/astro';
+/**
+ * Site header. Five fixed items. "Attractions" opens a mega-menu (published categories →
+ * published products) on hover/focus or via its chevron; the "Attractions" text itself always
+ * navigates to /attractions/. With nothing published the item is a plain link (no empty menu).
+ * Mobile: the same IA in a popover sheet, with a separate expand button for the attraction list.
+ */
+import { Menu, X, ArrowRight, ChevronDown } from '@lucide/astro';
 import Logo from './Logo.astro';
 import { site } from '../lib/content.ts';
 import { contactHref } from '../lib/enquiry.ts';
 
-const { nav } = await site();
+const r = await site();
+const { nav } = r;
 const path = Astro.url.pathname;
 const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 const cta = contactHref({ intent: 'project', source: 'nav' });
+// Mega-menu columns: only categories with published, active products; products listed by name.
+const groups = r.categories.map((c) => ({
+  name: c.name,
+  href: c.hasPage ? `/attractions/category/${c.slug}/` : `/attractions/#${c.slug}`,
+  items: c.attractions.map((a) => ({ name: a.name, href: `/attractions/${a.slug}/` })),
+}));
+const hasMenu = groups.length > 0;
+const linkClass =
+  'inline-flex items-center rounded-full px-3 py-2.5 text-[0.95rem] font-medium whitespace-nowrap text-text/80 xl:px-4 transition-colors hover:bg-mist hover:text-text aria-[current=page]:text-text aria-[current=page]:after:absolute aria-[current=page]:after:inset-x-3 xl:aria-[current=page]:after:inset-x-4 aria-[current=page]:after:bottom-1 aria-[current=page]:after:h-0.5 aria-[current=page]:after:rounded-full aria-[current=page]:after:bg-brand-blue';
 ---
 
 <header class="sticky top-0 z-50 border-b border-transparent bg-paper/85 backdrop-blur-xl transition-colors duration-300 data-[scrolled]:border-line" data-header>
@@ -19,17 +35,67 @@ const cta = contactHref({ intent: 'project', source: 'nav' });
     <nav aria-label="Primary" class="hidden lg:block">
       <ul class="flex items-center gap-1">
         {
-          nav.map((item) => (
-            <li class="relative">
-              <a
-                href={item.href}
-                aria-current={isActive(item.href) ? 'page' : undefined}
-                class="inline-flex items-center rounded-full px-3 py-2.5 text-[0.95rem] font-medium whitespace-nowrap text-text/80 xl:px-4 transition-colors hover:bg-mist hover:text-text aria-[current=page]:text-text aria-[current=page]:after:absolute aria-[current=page]:after:inset-x-3 xl:aria-[current=page]:after:inset-x-4 aria-[current=page]:after:bottom-1 aria-[current=page]:after:h-0.5 aria-[current=page]:after:rounded-full aria-[current=page]:after:bg-brand-blue"
-              >
-                {item.label}
-              </a>
-            </li>
-          ))
+          nav.map((item) =>
+            item.href === '/attractions/' && hasMenu ? (
+              <li class="group/mega" data-mega>
+                <span class="relative inline-flex items-center rounded-full transition-colors group-data-[open]/mega:bg-mist">
+                  <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined} class:list={[linkClass, 'pr-1.5 xl:pr-2 group-data-[open]/mega:text-text']}>
+                    {item.label}
+                  </a>
+                  <button
+                    type="button"
+                    class="-ml-1 mr-1 inline-flex size-8 items-center justify-center rounded-full text-text/70 transition-colors hover:bg-white hover:text-text"
+                    aria-expanded="false"
+                    aria-controls="mega-attractions"
+                    aria-label="Show attraction categories"
+                    data-mega-toggle
+                  >
+                    <ChevronDown class="size-4 transition-transform duration-200 group-data-[open]/mega:rotate-180" aria-hidden="true" />
+                  </button>
+                </span>
+                <!-- Panel: positioned against the sticky header, spanning its width. -->
+                <div
+                  id="mega-attractions"
+                  class="invisible absolute inset-x-0 top-full -translate-y-1 border-y border-line bg-white opacity-0 shadow-lift transition-[opacity,transform,visibility] duration-200 ease-out group-data-[open]/mega:visible group-data-[open]/mega:translate-y-0 group-data-[open]/mega:opacity-100"
+                  data-mega-panel
+                >
+                  <div class="wrap max-h-[calc(100dvh-6rem)] overflow-y-auto py-10">
+                    <div class="grid gap-x-10 gap-y-10 [grid-template-columns:repeat(auto-fit,minmax(11.5rem,1fr))]">
+                      {groups.map((g) => (
+                        <div>
+                          <p class="text-[0.75rem] font-semibold tracking-[0.12em] text-blue-700 uppercase">{g.name}</p>
+                          <ul class="mt-4 space-y-2.5">
+                            {g.items.map((a) => (
+                              <li>
+                                <a href={a.href} class="text-[0.95rem] text-text/85 transition-colors hover:text-brand-deep hover:underline hover:underline-offset-4">
+                                  {a.name}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                          <a href={g.href} class="mt-5 inline-flex items-center gap-1.5 text-[0.85rem] font-semibold text-brand-deep hover:underline hover:underline-offset-4">
+                            View all <ArrowRight class="size-3.5" aria-hidden="true" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                    <div class="mt-10 flex items-center justify-between gap-6 border-t border-line pt-6">
+                      <p class="text-[0.9rem] text-muted">Every attraction we manufacture and supply, grouped by format.</p>
+                      <a href="/attractions/" class="btn btn-outline min-h-10 px-5 text-[0.875rem]">
+                        All attractions <ArrowRight class="arrow" aria-hidden="true" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ) : (
+              <li class="relative">
+                <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined} class={linkClass}>
+                  {item.label}
+                </a>
+              </li>
+            ),
+          )
         }
       </ul>
     </nav>
@@ -61,19 +127,54 @@ const cta = contactHref({ intent: 'project', source: 'nav' });
         <X class="size-5" aria-hidden="true" />
       </button>
     </div>
-    <nav aria-label="Mobile" class="wrap flex h-[calc(100dvh-4.5rem)] flex-col justify-between pt-6 pb-8">
+    <nav aria-label="Mobile" class="wrap flex h-[calc(100dvh-4.5rem)] flex-col justify-between gap-8 overflow-y-auto pt-6 pb-8">
       <ul class="space-y-1">
         {
-          nav.map((item) => (
-            <li>
-              <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined} class="block border-b border-line py-4 font-display text-[1.9rem] font-semibold tracking-tight aria-[current=page]:text-brand-deep">
-                {item.label}
-              </a>
-            </li>
-          ))
+          nav.map((item) =>
+            item.href === '/attractions/' && hasMenu ? (
+              <li class="border-b border-line">
+                <div class="flex items-center justify-between gap-4">
+                  <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined} class="block flex-1 py-4 font-display text-[1.9rem] font-semibold tracking-tight aria-[current=page]:text-brand-deep">
+                    {item.label}
+                  </a>
+                  <button
+                    type="button"
+                    class="inline-flex size-11 items-center justify-center rounded-full border border-line-strong"
+                    aria-expanded="false"
+                    aria-controls="mobile-attractions"
+                    aria-label="Show attraction categories"
+                    data-mobile-toggle
+                  >
+                    <ChevronDown class="size-5 transition-transform duration-200" aria-hidden="true" />
+                  </button>
+                </div>
+                <div id="mobile-attractions" class="space-y-6 pt-2 pb-6" hidden>
+                  {groups.map((g) => (
+                    <div>
+                      <p class="text-[0.75rem] font-semibold tracking-[0.12em] text-blue-700 uppercase">{g.name}</p>
+                      <ul class="mt-2 space-y-1">
+                        {g.items.map((a) => (
+                          <li><a href={a.href} class="block py-1.5 text-[1.05rem]">{a.name}</a></li>
+                        ))}
+                      </ul>
+                      <a href={g.href} class="mt-1 inline-flex items-center gap-1.5 py-1.5 text-[0.95rem] font-semibold text-brand-deep">
+                        View all <ArrowRight class="size-3.5" aria-hidden="true" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </li>
+            ) : (
+              <li>
+                <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined} class="block border-b border-line py-4 font-display text-[1.9rem] font-semibold tracking-tight aria-[current=page]:text-brand-deep">
+                  {item.label}
+                </a>
+              </li>
+            ),
+          )
         }
       </ul>
-      <a href={cta} class="btn btn-primary w-full" data-track="project_cta_click" data-track-source="nav">
+      <a href={cta} class="btn btn-primary w-full shrink-0" data-track="project_cta_click" data-track-source="nav">
         Discuss a Project <ArrowRight class="arrow" aria-hidden="true" />
       </a>
     </nav>
@@ -88,5 +189,63 @@ const cta = contactHref({ intent: 'project', source: 'nav' });
   // Close the mobile menu when a same-page link is chosen.
   document.getElementById('mobile-nav')?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('a')) (e.currentTarget as HTMLElement).hidePopover();
+  });
+
+  // ── Desktop mega-menu ──────────────────────────────────────────────────────
+  const mega = document.querySelector<HTMLElement>('[data-mega]');
+  if (mega) {
+    const toggle = mega.querySelector<HTMLButtonElement>('[data-mega-toggle]')!;
+    const hoverable = matchMedia('(hover: hover) and (pointer: fine)');
+    let closeTimer = 0;
+    const setOpen = (open: boolean) => {
+      clearTimeout(closeTimer);
+      mega.toggleAttribute('data-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    };
+    const isOpen = () => mega.hasAttribute('data-open');
+
+    // Hover opens (pointer devices only); leaving the item + panel closes after a short grace period.
+    let hoverOpenedAt = 0;
+    mega.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'mouse' && hoverable.matches && !isOpen()) {
+        setOpen(true);
+        hoverOpenedAt = performance.now();
+      } else clearTimeout(closeTimer);
+    });
+    mega.addEventListener('pointerleave', (e) => {
+      if (e.pointerType === 'mouse') closeTimer = window.setTimeout(() => setOpen(false), 160);
+    });
+    // The chevron toggles (click, tap, Enter/Space); the "Attractions" text always navigates.
+    // A click that lands right after hover opened the menu must not immediately close it again.
+    toggle.addEventListener('click', () => setOpen(performance.now() - hoverOpenedAt < 500 ? true : !isOpen()));
+    // Keyboard (disclosure pattern): Tab passes the item; Enter/Space on the chevron opens the
+    // panel, whose links then follow in tab order. Focus leaving item + panel closes it.
+    mega.addEventListener('focusout', (e) => {
+      if (!mega.contains(e.relatedTarget as Node | null)) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen()) {
+        setOpen(false);
+        toggle.focus({ preventScroll: true });
+      }
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (isOpen() && !mega.contains(e.target as Node)) setOpen(false);
+    });
+    // Close on navigation (including back/forward cache restores).
+    mega.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) setOpen(false);
+    });
+    window.addEventListener('pageshow', () => setOpen(false));
+  }
+
+  // ── Mobile expandable attraction list ──────────────────────────────────────
+  const mToggle = document.querySelector<HTMLButtonElement>('[data-mobile-toggle]');
+  mToggle?.addEventListener('click', () => {
+    const panel = document.getElementById(mToggle.getAttribute('aria-controls')!)!;
+    const open = panel.hidden === true;
+    panel.hidden = !open;
+    mToggle.setAttribute('aria-expanded', String(open));
+    mToggle.querySelector('svg')?.classList.toggle('rotate-180', open);
   });
 </script>

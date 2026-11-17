@@ -18,7 +18,7 @@ const H = `h${headingLevel}` as 'h2' | 'h3';
 ---
 
 <article class="group relative flex flex-col" data-reveal>
-  <MediaFrame media={a.stills[0] ?? a.videos[0]} aspect="4 / 3" sizes={sizes} class="rounded-[var(--radius-card)] bg-mist" imgClass="transition-transform duration-700 ease-[var(--ease-out-quint)] group-hover:scale-[1.04]" />
+  <MediaFrame media={a.stills[0] ?? a.videos[0]} aspect="4 / 3" sizes={sizes} class="mf-glow rounded-[var(--radius-card)] bg-mist" imgClass="transition-transform duration-700 ease-[var(--ease-out-quint)] group-hover:scale-[1.04]" />
   <div class="mt-5 flex items-start justify-between gap-4">
     <div>
       {category && <p class="mb-2 text-[0.8rem] font-semibold tracking-[0.1em] text-muted uppercase">{category.name}</p>}

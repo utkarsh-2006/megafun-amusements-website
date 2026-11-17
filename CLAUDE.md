@@ -2,7 +2,7 @@
 
 Guidance for Claude (and people) maintaining the Mega Fun Amusements website.
 
-Static Astro 7 site, TypeScript, Tailwind CSS v4, GSAP for motion, Lucide icons, Astro Content Collections. Hosted on Cloudflare Pages from GitHub. No backend, database, CMS, API, forms endpoint, accounts or store — do not add any without a separately approved requirement (brief v0.3 §1.2, §7.5, §8.3).
+Static Astro 7 site, TypeScript, Tailwind CSS v4, GSAP for motion, Lucide icons, Astro Content Collections. Hosted on Cloudflare Pages from GitHub. The only server-side code is the owner-approved (18 Nov 2026) enquiry endpoint `functions/api/enquiry.ts` (Pages Function → Turnstile → Resend). No database, CMS, accounts or store; do not add other backend code without a separately approved requirement.
 
 The structural source of truth is `Mega_Fun_Amusements_Website_Project_Brief_v0.3.docx` (in the project workspace; git-ignored). Section references below (§) point to it.
 
@@ -40,7 +40,10 @@ Tests run TypeScript directly with `--experimental-strip-types`: files they impo
 - Credentials render as a section of Turnkey & Engineering (`#credentials`) once ≥2 are current; there is no standalone page.
 - Solutions and Projects keep their v0.3 gates and are linked from content (Home sections, attraction pages), not from the navigation.
 - **Homepage company copy** (About, Portfolio, Engineering, Turnkey, Closing, H1, SEO) lives in `src/config/homepage.ts`: the owner's draft, rendered in production, flagged in preview until `approved`. Never copy these paragraphs onto other pages.
-- **Contact has exactly two sections:** `#enquiry` (intro + details + controls on the left, draft card on the right) and `#office` (map). The product selector in the card and the "Attraction of interest" field are one state (`select[data-product]`, synced in `src/scripts/contact.ts`); options are publishable attractions only. "WhatsApp Us" uses `company.contact.whatsapp` with `whatsappText()` from `src/lib/enquiry.ts`.
+- **Contact has exactly two sections:** `#enquiry` and `#office` (map). LEFT column is informational only (intro, email, phone, WhatsApp; no fields). RIGHT is the enquiry card: "Select attraction category" (classification names from `resolve().enquiryCategories`, never individual products, never empty classifications), Your name (required), Phone (optional), the live email preview, **Send Enquiry** (POST `/api/enquiry`) and **WhatsApp Us** (same text). `composeEnquiry()`/`validateEnquiry()` in `src/lib/enquiry.ts` are shared by browser and server, so the server recomposes exactly the previewed email; the category allow-list reaches the function via the generated `/enquiry-options.json`. No mailto/Gmail/Outlook in the card.
+- **Header**: "Attractions" is a link plus a separate chevron that opens the mega-menu (published categories → published products). Never make the text itself only a toggle. See docs/ARCHITECTURE.md → Header mega-menu.
+- **`.mf-glow`** is the animated card border; use it only on attraction/product cards.
+- **Enquiry message** is editable; the server sends it verbatim (plus a details block). Do not regenerate it after the visitor edits it.
 - **Gallery** lives only on `/updates/#gallery`: media records with `gallery: true` (approved; pending ones show as placeholders in preview), rendered by the reusable `Gallery.astro` (4/2/1 per page, buttons, arrow keys, drag, lightbox). Attraction pages show their own photos in the hero thumbnails, not in a gallery section.
 - **One responsibility per page; no repeated copy.** Home introduces the company and previews; Attractions = what we make; attraction pages = the product; Turnkey = how we deliver (full stage/capability descriptions live only here); Updates = announcements; Contact = contact, office, enquiry. Home sections show names and link out; they never reproduce inner-page descriptions.
 

@@ -1,9 +1,9 @@
 /**
- * Draft-email builder for the Contact page (brief §7). Pure and dependency-free:
- * used by the contact script in the browser, by Astro pages for static no-JS
- * mailto fallbacks, and by tests.
- *
- * Nothing here sends anything. The visitor's own email client sends the message.
+ * Enquiry helpers. Pure and dependency-free, shared by:
+ * - the Contact page script (live preview, WhatsApp link),
+ * - the Cloudflare Pages Function `functions/api/enquiry.ts` (validation + the exact same
+ *   email text, so the visitor sees precisely what is sent),
+ * - Astro pages (contextual links, mailto fallbacks elsewhere on the site) and tests.
  */
 export const intents = ['project', 'specification', 'service', 'general'] as const;
 export type Intent = (typeof intents)[number];
@@ -123,45 +123,123 @@ export function mailtoHref(to: string, d: Partial<Draft>): string {
   return `mailto:${to}${q ? `?${q}` : ''}`;
 }
 
-export function gmailHref(to: string, d: Draft): string {
-  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${enc(d.subject)}&body=${enc(d.body)}`;
+// ── Contact-card enquiry (sent by the Pages Function) ─────────────────────────
+
+export interface Enquiry {
+  intent: Intent;
+  /** Display name of the selected attraction classification, if any. */
+  category?: string;
+  name: string;
+  phone?: string;
 }
 
-export function outlookHref(to: string, d: Draft): string {
-  return `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${enc(d.subject)}&body=${enc(d.body)}`;
-}
-
-const whatsappIntention: Record<Intent, string> = {
-  project: "I'd like to discuss a project.",
-  specification: "I'd like to request specifications.",
-  service: 'I need support with an installed attraction.',
-  general: 'I have a general enquiry.',
+const subjectLabel: Record<Intent, string> = {
+  project: 'Project enquiry',
+  specification: 'Specification request',
+  service: 'Existing customer / service',
+  general: 'General enquiry',
 };
 
 /**
- * Short WhatsApp message: greeting, intention, enquiry type, attraction and any details
- * supplied. Nothing is sent — WhatsApp opens with the text for the visitor to review.
+ * The email exactly as sent: subject plus paragraphs (rendered as a letter in the preview,
+ * joined with blank lines for the plain-text email and for WhatsApp).
  */
-export function whatsappText(intent: Intent, f: Fields): string {
-  const rows: [string, string][] = [
-    ['Enquiry type', intentLabels[intent]],
-    ['Attraction', clean(f.attraction)],
-    ['Name', clean(f.name)],
-    ['Company', clean(f.company)],
-    ['Venue type', clean(f.venue)],
-    ['Location', clean(f.location)],
-    ['Timeline', clean(f.timeline)],
-    ['Site constraints', clean(f.constraints)],
+export function composeEnquiry(e: Enquiry): { subject: string; paragraphs: string[]; text: string } {
+  const cat = clean(e.category);
+  const name = clean(e.name);
+  const phone = clean(e.phone);
+  const intention: Record<Intent, string> = {
+    project: cat ? `I'd like to discuss a project involving your ${cat}.` : "I'd like to discuss a project with Mega Fun Amusements.",
+    specification: cat ? `I'd like to request specifications for your ${cat}.` : "I'd like to request product specifications.",
+    service: cat ? `I'm contacting you about an installed attraction (${cat}).` : "I'm contacting you about an installed attraction.",
+    general: cat ? `I have an enquiry about your ${cat}.` : 'I have a general enquiry.',
+  };
+  const paragraphs = [
+    'Hello Mega Fun Amusements team,',
+    intention[e.intent],
+    phone ? `Please contact me on ${phone} to discuss the details.` : 'Please get in touch to discuss the details.',
+    ['Kind regards,', name || '[Your name]', phone].filter(Boolean).join('\n'),
   ];
-  const message = (f.message ?? '').trim();
+  const subject = [subjectLabel[e.intent], cat, name].filter(Boolean).join(' — ');
+  return { subject, paragraphs, text: paragraphs.join('\n\n') };
+}
+
+export interface EnquiryInput {
+  intent?: unknown;
+  category?: unknown;
+  name?: unknown;
+  phone?: unknown;
+  /** The visitor's final (possibly edited) message — sent verbatim. */
+  message?: unknown;
+}
+export type EnquiryErrors = Partial<Record<'intent' | 'category' | 'name' | 'phone' | 'message', string>>;
+export type Validated =
+  | { ok: true; value: { intent: Intent; categoryId?: string; categoryName?: string; name: string; phone?: string; message: string } }
+  | { ok: false; errors: EnquiryErrors };
+
+export const MESSAGE_MAX = 3000;
+
+/** Normalise a free-text message: unify line endings, drop control characters (keep \n and \t), trim. */
+export function cleanMessage(v: unknown): string {
+  if (typeof v !== 'string') return '';
+  return v
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '')
+    .replace(/\n{4,}/g, '\n\n\n')
+    .trim();
+}
+
+const NAME = /^[\p{L}\p{M}][\p{L}\p{M} .'’-]{1,79}$/u;
+const PHONE = /^\+?[0-9 ()-]{6,24}$/;
+
+/** Validates untrusted input (browser and server use the same rules). Categories must be in the allow-list. */
+export function validateEnquiry(input: EnquiryInput, categories: { id: string; name: string }[]): Validated {
+  const errors: EnquiryErrors = {};
+  const str = (v: unknown) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '');
+  const intent = str(input.intent);
+  if (!(intents as readonly string[]).includes(intent)) errors.intent = 'Unknown enquiry type.';
+  const categoryId = str(input.category);
+  const category = categories.find((c) => c.id === categoryId);
+  if (categoryId && !category) errors.category = 'Please choose a category from the list.';
+  const name = str(input.name);
+  if (!name) errors.name = 'Please enter your name.';
+  else if (!NAME.test(name)) errors.name = 'Please enter your name using letters only.';
+  const phone = str(input.phone);
+  const digits = phone.replace(/\D/g, '').length;
+  if (phone && (!PHONE.test(phone) || digits < 7 || digits > 15)) errors.phone = 'Please enter a valid phone number, e.g. +91 98765 43210.';
+  const message = cleanMessage(input.message);
+  if (!message) errors.message = 'Please write a short message.';
+  else if (message.length > MESSAGE_MAX) errors.message = `Please keep the message under ${MESSAGE_MAX} characters.`;
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return {
+    ok: true,
+    value: { intent: intent as Intent, name, message, ...(category ? { categoryId: category.id, categoryName: category.name } : {}), ...(phone ? { phone } : {}) },
+  };
+}
+
+/** Subject line (generated, not editable): enquiry type — category — name. */
+export function enquirySubject(e: Pick<Enquiry, 'intent' | 'category' | 'name'>): string {
+  return composeEnquiry({ ...e, name: e.name ?? '' }).subject;
+}
+
+/** The email the company receives: the visitor's exact message, then structured details. */
+export function enquiryEmailText(v: { intent: Intent; categoryName?: string; name: string; phone?: string; message: string }, host: string): string {
   return [
-    'Hello Mega Fun Amusements,',
-    whatsappIntention[intent],
-    rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n'),
-    message,
-  ]
-    .filter(Boolean)
-    .join('\n\n');
+    v.message,
+    '',
+    '—',
+    'Enquiry details',
+    `Name: ${v.name}`,
+    `Phone: ${v.phone ?? 'not provided'}`,
+    `Attraction category: ${v.categoryName ?? 'not specified'}`,
+    `Enquiry type: ${intentLabels[v.intent]}`,
+    `Sent from the enquiry card at ${host}/contact/`,
+  ].join('\n');
+}
+
+/** WhatsApp carries the generated message (or pass the visitor's edited text directly). */
+export function whatsappText(e: Enquiry): string {
+  return composeEnquiry(e).text;
 }
 
 /** wa.me link; `number` is digits only with country code (e.g. 919566201124). */

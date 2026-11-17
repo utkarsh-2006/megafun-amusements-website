@@ -206,6 +206,11 @@ export interface Resolved {
   capabilityProfile: Media | null;
   /** Curated gallery images (approved; pending placeholders in preview). */
   gallery: Media[];
+  /**
+   * Classifications offered in the Contact enquiry: visible category records that have at least
+   * one non-retired product record. Names only — no product details are exposed.
+   */
+  enquiryCategories: { id: string; name: string }[];
   nav: NavItem[];
   /** Non-fatal findings (hidden content, expired media). */
   warnings: string[];
@@ -457,6 +462,10 @@ export function resolve(raw: RawContent, opts: Options): Resolved {
     newsLive,
     homeNews,
     capabilityProfile,
+    enquiryCategories: raw.categories
+      .filter((c) => visible(c.data.status) && raw.attractions.some((a) => a.data.primaryCategory === c.id && a.data.operationalStatus !== 'retired'))
+      .sort((x, y) => x.data.order - y.data.order || x.data.name.localeCompare(y.data.name))
+      .map((c) => ({ id: c.id, name: c.data.name })),
     gallery: [...media.values()].filter((m) => m.gallery && m.kind === 'image').sort((a, b) => a.galleryOrder - b.galleryOrder || a.id.localeCompare(b.id)),
     nav,
     warnings,
