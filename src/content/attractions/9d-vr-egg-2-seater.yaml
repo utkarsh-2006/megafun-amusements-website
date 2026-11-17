@@ -1,0 +1,21 @@
+name: "9D VR Egg — 2 Seats"
+slug: 9d-vr-egg-2-seater
+operationalStatus: active
+status: review
+primaryCategory: virtual-reality
+secondaryCategories: []
+summary: "A two-seat, egg-shaped virtual-reality motion simulator."
+experience:
+  - "Two guests sit in an egg-shaped capsule wearing VR headsets while an electric motion base moves the capsule with the ride."
+features:
+  - "Two seats"
+  - "Egg-shaped capsule"
+  - "Electric motion base"
+variants: []
+suitableVenues: []
+media:
+  - "9d-vr-egg-2-seater-still-1"
+  - "9d-vr-egg-2-seater-still-2"
+specifications: []
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17). Existing site text says \"six seats\" for this two-seat model and shows \"Availability: False\"; confirm."

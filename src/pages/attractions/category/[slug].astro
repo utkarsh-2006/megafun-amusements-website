@@ -1,0 +1,50 @@
+---
+/** Category page — only when ≥3 active publishable attractions have it as primary category. */
+import Base from '../../../layouts/Base.astro';
+import PageHeader from '../../../components/PageHeader.astro';
+import AttractionCard from '../../../components/AttractionCard.astro';
+import EnquiryClose from '../../../components/EnquiryClose.astro';
+import DraftFlag from '../../../components/DraftFlag.astro';
+import { site } from '../../../lib/content.ts';
+import type { Category } from '../../../lib/resolve.ts';
+
+export async function getStaticPaths() {
+  return (await site()).categories.filter((c) => c.hasPage).map((c) => ({ params: { slug: c.slug }, props: { id: c.id } }));
+}
+const r = await site();
+const c = r.categoryById.get(Astro.props.id) as Category;
+const others = r.categories.filter((x) => x.id !== c.id);
+---
+
+<Base title={c.seo.title ?? c.name} description={c.seo.description ?? c.description} pageType="category">
+  <PageHeader crumbs={[{ label: 'Attractions', href: '/attractions/' }, { label: c.name }]} eyebrow={`${c.attractions.length} attractions`} title={c.name} lead={c.description}>
+    <DraftFlag when={c.draft} class="mt-4" />
+  </PageHeader>
+
+  <section class="wrap py-20 lg:py-28" aria-label={`${c.name} attractions`}>
+    <div class="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">{c.attractions.map((a) => <AttractionCard attraction={a} headingLevel={2} />)}</div>
+    {
+      c.secondary.length > 0 && (
+        <div class="mt-20 border-t border-line pt-12">
+          <h2 class="t-h3">Also suited to this group</h2>
+          <div class="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">{c.secondary.map((a) => <AttractionCard attraction={a} showCategory />)}</div>
+        </div>
+      )
+    }
+  </section>
+
+  {
+    others.length > 0 && (
+      <nav aria-label="Other attraction groups" class="border-t border-line bg-white">
+        <div class="wrap flex flex-wrap items-center gap-3 py-10">
+          <span class="mr-2 text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">Other groups</span>
+          {others.map((o) => (
+            <a href={o.hasPage ? `/attractions/category/${o.slug}/` : `/attractions/#${o.slug}`} class="rounded-full border border-line-strong px-4 py-2 text-[0.95rem] hover:border-text">{o.name}</a>
+          ))}
+        </div>
+      </nav>
+    )
+  }
+
+  <div class="pt-3"><EnquiryClose source="category" item={c.slug} /></div>
+</Base>

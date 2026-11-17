@@ -1,0 +1,92 @@
+---
+import { Menu, X, ArrowRight } from '@lucide/astro';
+import Logo from './Logo.astro';
+import { site } from '../lib/content.ts';
+import { contactHref } from '../lib/enquiry.ts';
+
+const { nav } = await site();
+const path = Astro.url.pathname;
+const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+const cta = contactHref({ intent: 'project', source: 'nav' });
+---
+
+<header class="sticky top-0 z-50 border-b border-transparent bg-paper/85 backdrop-blur-xl transition-colors duration-300 data-[scrolled]:border-line" data-header>
+  <div class="wrap flex h-[4.5rem] items-center justify-between gap-6 lg:h-20">
+    <a href="/" class="-m-2 shrink-0 p-2" aria-label="Mega Fun Amusements — home">
+      <Logo class="h-9 w-auto lg:h-11" eager />
+    </a>
+
+    <nav aria-label="Primary" class="hidden lg:block">
+      <ul class="flex items-center gap-1">
+        {
+          nav.map((item) => (
+            <li class="relative">
+              <a
+                href={item.href}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+                class="inline-flex items-center rounded-full px-3 py-2.5 text-[0.95rem] font-medium whitespace-nowrap text-text/80 xl:px-4 transition-colors hover:bg-mist hover:text-text aria-[current=page]:text-text aria-[current=page]:after:absolute aria-[current=page]:after:inset-x-3 xl:aria-[current=page]:after:inset-x-4 aria-[current=page]:after:bottom-1 aria-[current=page]:after:h-0.5 aria-[current=page]:after:rounded-full aria-[current=page]:after:bg-brand-blue"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a href={cta} class="btn btn-primary hidden sm:inline-flex" data-track="project_cta_click" data-track-source="nav">
+        Discuss a Project <ArrowRight class="arrow" aria-hidden="true" />
+      </a>
+      <button
+        type="button"
+        popovertarget="mobile-nav"
+        class="inline-flex size-12 items-center justify-center rounded-full border border-line-strong lg:hidden"
+        aria-label="Open menu"
+      >
+        <Menu class="size-5" aria-hidden="true" />
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile menu: native popover gives Esc + light-dismiss and works without our JS. -->
+  <div
+    id="mobile-nav"
+    popover
+    class="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none bg-paper p-0 text-text opacity-0 transition-[opacity,display,overlay] transition-discrete duration-300 open:opacity-100 starting:open:opacity-0 lg:hidden"
+  >
+    <div class="wrap flex h-[4.5rem] items-center justify-between">
+      <Logo class="h-9 w-auto" />
+      <button type="button" popovertarget="mobile-nav" popovertargetaction="hide" class="inline-flex size-12 items-center justify-center rounded-full border border-line-strong" aria-label="Close menu">
+        <X class="size-5" aria-hidden="true" />
+      </button>
+    </div>
+    <nav aria-label="Mobile" class="wrap flex h-[calc(100dvh-4.5rem)] flex-col justify-between pt-6 pb-8">
+      <ul class="space-y-1">
+        {
+          nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined} class="block border-b border-line py-4 font-display text-[1.9rem] font-semibold tracking-tight aria-[current=page]:text-brand-deep">
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <a href={cta} class="btn btn-primary w-full" data-track="project_cta_click" data-track-source="nav">
+        Discuss a Project <ArrowRight class="arrow" aria-hidden="true" />
+      </a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const onScroll = () => header?.toggleAttribute('data-scrolled', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+  // Close the mobile menu when a same-page link is chosen.
+  document.getElementById('mobile-nav')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) (e.currentTarget as HTMLElement).hidePopover();
+  });
+</script>

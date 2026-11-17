@@ -1,0 +1,7 @@
+name: "Manufacturing"
+kind: delivery_stage
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Producing the attraction systems, structures and themed elements."
+order: 4
+status: review

@@ -1,0 +1,7 @@
+name: "Sensor and PLC show control"
+kind: technical
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Attraction effects triggered by sensors and run on programmable logic controllers (PLCs)."
+order: 11
+status: review

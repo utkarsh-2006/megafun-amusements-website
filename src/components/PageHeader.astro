@@ -1,0 +1,28 @@
+---
+/** Interior page opener: breadcrumbs, eyebrow, H1, lead and optional actions/aside. */
+import Breadcrumbs from './Breadcrumbs.astro';
+
+interface Props {
+  crumbs: { label: string; href?: string }[];
+  eyebrow?: string;
+  title: string;
+  lead?: string;
+}
+const { crumbs, eyebrow, title, lead } = Astro.props;
+const hasAside = Astro.slots.has('aside');
+---
+
+<section class="relative overflow-hidden border-b border-line">
+  <div class="wrap pt-8 pb-14 lg:pt-10 lg:pb-20">
+    <Breadcrumbs items={crumbs} />
+    <div class:list={['mt-10 grid gap-10 lg:mt-14', hasAside && 'lg:grid-cols-12 lg:items-end']}>
+      <div class:list={[hasAside && 'lg:col-span-7']}>
+        {eyebrow && <p class="eyebrow text-blue-700" data-hero-line>{eyebrow}</p>}
+        <h1 class="t-display mt-5 max-w-[18ch]" data-hero-line>{title}</h1>
+        {lead && <p class="t-lead mt-6 max-w-[58ch] text-muted" data-hero-line>{lead}</p>}
+        <div data-hero-line><slot /></div>
+      </div>
+      {hasAside && <div class="lg:col-span-5"><slot name="aside" /></div>}
+    </div>
+  </div>
+</section>

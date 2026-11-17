@@ -1,0 +1,26 @@
+name: "5D–9D Motion Theatre"
+slug: motion-theatre
+operationalStatus: active
+status: review
+primaryCategory: immersive-theatres
+secondaryCategories: []
+summary: "A 3D cinema on a motion seating base, with in-theatre effects, offered in 5D, 6D, 7D and 9D formats."
+experience:
+  - "Guests watch a 3D film through polarised glasses while the seating base moves in time with the action."
+  - "Physical effects such as smoke, snow and bubbles are triggered during the film."
+features:
+  - "Motion seating base with three degrees of freedom"
+  - "Polarised 3D projection"
+  - "Smoke, snow and bubble effects"
+variants:
+  - name: "5D"
+  - name: "6D"
+  - name: "7D"
+  - name: "9D"
+suitableVenues: []
+media:
+  - "motion-theatre-still-1"
+  - "motion-theatre-still-2"
+specifications: []
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17). Existing site has two near-identical pages (/products/5d-theatre/4 and /products/5d-6d-7d-9d-theatre/5); merged here pending confirmation."

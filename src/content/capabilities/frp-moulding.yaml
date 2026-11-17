@@ -1,0 +1,7 @@
+name: "FRP moulding facility"
+kind: facility
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Fibre-reinforced plastic moulding for attraction components, themed structures and decorative elements."
+order: 20
+status: review

@@ -1,0 +1,90 @@
+---
+/**
+ * /attractions/ — always present (top-level navigation); deliberate empty state when no
+ * attraction is publishable yet.
+ * Categories with a category page link to it; smaller groups are shown here as sections.
+ */
+import { ArrowRight } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import AttractionCard from '../../components/AttractionCard.astro';
+import EnquiryClose from '../../components/EnquiryClose.astro';
+import DraftFlag from '../../components/DraftFlag.astro';
+import { site } from '../../lib/content.ts';
+
+
+const r = await site();
+const count = r.attractions.filter((a) => a.operationalStatus === 'active').length;
+---
+
+<Base
+  title="Attractions"
+  description="The attractions Mega Fun Amusements manufactures and supplies, grouped by format, with details for each attraction."
+  pageType="attractions"
+>
+  <PageHeader
+    crumbs={[{ label: 'Attractions' }]}
+    eyebrow={count ? `${count} attractions · ${r.categories.length} groups` : 'Attractions'}
+    title="Attractions built around the guest experience"
+    lead="What we manufacture and supply. Each group brings together attractions that share a format; open any attraction for how it works, its formats and what to plan for."
+  >
+    {r.categories.length > 0 && <nav aria-label="Attraction groups" class="mt-10">
+      <ul class="flex flex-wrap gap-2">
+        {
+          r.categories.map((c) => (
+            <li>
+              <a href={`#${c.slug}`} class="inline-flex items-center gap-2 rounded-full border border-line-strong bg-white px-4 py-2 text-[0.95rem] transition-colors hover:border-text">
+                {c.name} <span class="text-muted tabular-nums">{c.attractions.length}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>}
+  </PageHeader>
+
+  {
+    r.attractions.length === 0 && (
+      <section class="wrap py-20 lg:py-28" aria-labelledby="h-empty">
+        <div class="max-w-2xl rounded-[var(--radius-stage)] border border-line bg-white p-8 lg:p-12" data-reveal>
+          <h2 id="h-empty" class="t-h3">Our attraction catalogue is being prepared</h2>
+          <p class="mt-3 text-muted">Detailed attraction pages will appear here once product information and photographs are approved. Ask us about a specific attraction in the meantime.</p>
+          <a href="/contact/?intent=specification&source=attractions#enquiry" class="btn btn-outline mt-8" data-track="specification_cta_click" data-track-source="attractions">Ask about an attraction <ArrowRight class="arrow" aria-hidden="true" /></a>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    r.categories.map((c, i) => (
+      <section id={c.slug} class:list={['scroll-mt-24', i % 2 === 1 && 'border-y border-line bg-white']} aria-labelledby={`h-${c.slug}`}>
+        <div class="wrap py-20 lg:py-28">
+          <div class="grid gap-6 md:grid-cols-12 md:items-end" data-reveal>
+            <div class="md:col-span-7">
+              <p class="eyebrow text-blue-700"><span>{String(i + 1).padStart(2, '0')}</span>Attraction group</p>
+              <h2 id={`h-${c.slug}`} class="t-h2 mt-4">{c.name} <DraftFlag when={c.draft} /></h2>
+            </div>
+            <div class="md:col-span-5">
+              <p class="text-muted">{c.hasPage ? c.summary : c.description}</p>
+              {c.hasPage && (
+                <a href={`/attractions/category/${c.slug}/`} class="link mt-4 inline-flex items-center gap-2">
+                  {c.name} overview <ArrowRight class="size-4" aria-hidden="true" />
+                </a>
+              )}
+            </div>
+          </div>
+          <div class="mt-12 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+            {c.attractions.map((a) => <AttractionCard attraction={a} />)}
+          </div>
+          {c.secondary.length > 0 && (
+            <p class="mt-12 text-[0.95rem] text-muted">
+              Also relevant: {c.secondary.map((a, j) => (<>{j > 0 && ', '}<a class="link" href={`/attractions/${a.slug}/`}>{a.name}</a></>))}
+            </p>
+          )}
+        </div>
+      </section>
+    ))
+  }
+
+  <div class="pt-3"><EnquiryClose source="attractions" title="Not sure which attraction fits?" lead="Share your venue, space and audience. We will prepare a draft email you can review and send." /></div>
+</Base>

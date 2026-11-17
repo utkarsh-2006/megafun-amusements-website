@@ -1,0 +1,18 @@
+name: "Ames Room"
+slug: ames-room
+operationalStatus: active
+status: review
+primaryCategory: illusion-experiences
+secondaryCategories: []
+summary: "A distorted room that makes guests appear to grow or shrink as they cross it."
+experience:
+  - "Seen from a fixed viewpoint the room looks rectangular, but its trapezoid shape makes a guest in one corner look like a giant and in the other like a miniature."
+features: []
+variants: []
+suitableVenues: []
+media:
+  - "ames-room-still-1"
+  - "ames-room-still-2"
+specifications: []
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17). Published as an \"update\" on the existing site; confirm it is an active product."

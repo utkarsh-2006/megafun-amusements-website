@@ -1,0 +1,7 @@
+name: "Engineering disciplines"
+kind: technical
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Hydraulics, pneumatics, mechatronics, electronics, automation, control systems and animatronics."
+order: 10
+status: review

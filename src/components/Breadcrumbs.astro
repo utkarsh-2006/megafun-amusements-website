@@ -1,0 +1,39 @@
+---
+import { ChevronRight } from '@lucide/astro';
+import { siteUrl } from '../config/build.ts';
+
+interface Props {
+  items: { label: string; href?: string }[];
+  dark?: boolean;
+}
+const { items, dark = false } = Astro.props;
+const all = [{ label: 'Home', href: '/' }, ...items];
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: all.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.label,
+    ...(c.href ? { item: new URL(c.href, siteUrl).href } : {}),
+  })),
+};
+---
+
+<nav aria-label="Breadcrumb" class:list={['text-[0.875rem]', dark ? 'text-on-dark-muted' : 'text-muted']}>
+  <ol class="flex flex-wrap items-center gap-1.5">
+    {
+      all.map((c, i) => (
+        <li class="flex items-center gap-1.5">
+          {i > 0 && <ChevronRight class="size-3.5 opacity-60" aria-hidden="true" />}
+          {c.href && i < all.length - 1 ? (
+            <a href={c.href} class:list={['underline-offset-4 hover:underline', dark ? 'hover:text-white' : 'hover:text-text']}>{c.label}</a>
+          ) : (
+            <span aria-current="page" class={dark ? 'text-white' : 'text-text'}>{c.label}</span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+<script type="application/ld+json" set:html={JSON.stringify(ld)} />

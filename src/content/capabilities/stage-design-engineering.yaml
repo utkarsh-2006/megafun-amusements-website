@@ -1,0 +1,7 @@
+name: "Design & engineering"
+kind: delivery_stage
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Developing the design and engineering for the selected attractions and the site."
+order: 3
+status: review

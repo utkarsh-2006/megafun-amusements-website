@@ -1,0 +1,12 @@
+---
+/** Preview-only marker for content that is not yet approved. Renders nothing in production. */
+import { previewMode } from '../config/build.ts';
+interface Props {
+  label?: string;
+  when?: boolean;
+  class?: string;
+}
+const { label = 'Needs confirmation', when = true, class: cls = '' } = Astro.props;
+---
+
+{previewMode && when && <span class:list={['draft-flag align-middle', cls]}>{label}</span>}

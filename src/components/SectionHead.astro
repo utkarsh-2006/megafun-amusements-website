@@ -1,0 +1,28 @@
+---
+/** Section opener: indexed eyebrow, heading, optional intro and trailing action. */
+interface Props {
+  index?: string;
+  eyebrow: string;
+  title: string;
+  intro?: string;
+  /** Heading level (default 2) */
+  level?: 2 | 3;
+  dark?: boolean;
+  class?: string;
+  /** id for aria-labelledby on the parent section */
+  id?: string;
+}
+const { index, eyebrow, title, intro, level = 2, dark = false, class: cls = '', id } = Astro.props;
+const H = `h${level}` as 'h2' | 'h3';
+---
+
+<div class:list={['grid gap-6 md:grid-cols-12 md:items-end', cls]} data-reveal>
+  <div class="md:col-span-7">
+    <p class:list={['eyebrow', dark ? 'text-blue-300' : 'text-blue-700']}>{index && <span>{index}</span>}{eyebrow}</p>
+    <H id={id} class="t-h2 mt-5">{title}</H>
+  </div>
+  <div class="md:col-span-5 md:pb-1">
+    {intro && <p class:list={['t-lead', dark ? 'text-on-dark-muted' : 'text-muted']}>{intro}</p>}
+    <slot />
+  </div>
+</div>

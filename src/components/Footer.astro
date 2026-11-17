@@ -1,0 +1,58 @@
+---
+/** Site footer: same five-item IA as the header, plus contact routes. No company introduction (that lives on Home). */
+import { Mail, Phone, MapPin } from '@lucide/astro';
+import Logo from './Logo.astro';
+import EmailLink from './EmailLink.astro';
+import { site } from '../lib/content.ts';
+import { company, publicContact } from '../config/company.ts';
+
+const r = await site();
+const year = new Date().getFullYear();
+const loc = company.contact.location;
+---
+
+<footer class="border-t border-line bg-white">
+  <div class="wrap grid gap-12 py-16 md:grid-cols-12 lg:py-20">
+    <div class="md:col-span-5">
+      <a href="/" class="inline-block" aria-label="Mega Fun Amusements — home"><Logo class="h-12 w-auto" /></a>
+    </div>
+
+    <nav aria-label="Footer" class="md:col-span-3">
+      <h2 class="text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">Explore</h2>
+      <ul class="mt-4 space-y-2.5">
+        {r.nav.map((n) => <li><a href={n.href} class="hover:text-blue-700">{n.label}</a></li>)}
+      </ul>
+    </nav>
+
+    <div class="md:col-span-4">
+      <h2 class="text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">Get in touch</h2>
+      <ul class="mt-4 space-y-3">
+        <li class="flex items-center gap-2.5">
+          <Mail class="size-4 shrink-0 text-brand-violet" aria-hidden="true" />
+          <EmailLink class="[overflow-wrap:anywhere] hover:text-blue-700" source="footer" />
+        </li>
+        <li>
+          <a href={`tel:${publicContact.phone.tel}`} class="inline-flex items-center gap-2.5 hover:text-blue-700" data-track="phone_click" data-track-source="footer">
+            <Phone class="size-4 shrink-0 text-brand-violet" aria-hidden="true" />{publicContact.phone.display}
+          </a>
+        </li>
+        {
+          loc.verified && (
+            <li class="flex gap-2.5 text-muted">
+              <MapPin class="mt-1 size-4 shrink-0 text-brand-violet" aria-hidden="true" />
+              <a href="/contact/#office" class="hover:text-blue-700">
+                <address class="not-italic">{company.contact.address.value.map((l) => <span class="block">{l}</span>)}</address>
+              </a>
+            </li>
+          )
+        }
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-line">
+    <div class="wrap flex flex-col gap-3 py-6 text-[0.875rem] text-muted sm:flex-row sm:items-center sm:justify-between">
+      <p>© {year} {company.name}</p>
+      <a href="/privacy/" class="hover:text-text">Privacy</a>
+    </div>
+  </div>
+</footer>

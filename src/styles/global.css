@@ -1,0 +1,150 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/instrument-sans';
+
+/*
+ * Design tokens — see docs/DESIGN_SYSTEM.md.
+ * Brand hues are sampled from the supplied logo (src/assets/brand/megafun-logo.png):
+ *   blue #1983f1 · violet #a352ed · magenta #e332f1 · deep purple #3f057b
+ * Blue, violet and magenta fail WCAG text contrast on light surfaces — use them for
+ * graphics, large display accents and fills. Use blue-700 / deep for text.
+ */
+@theme {
+  --color-brand-blue: #1983f1;
+  --color-brand-violet: #a352ed;
+  --color-brand-magenta: #e332f1;
+  --color-brand-deep: #3f057b;
+
+  --color-blue-700: #0a62c2;
+  --color-blue-300: #7cbcff;
+  --color-magenta-300: #f19af8;
+
+  --color-ink-950: #0e0a1c;
+  --color-ink-900: #160f2b;
+  --color-ink-800: #221940;
+  --color-ink-700: #342a57;
+
+  --color-paper: #f6f5fa;
+  --color-mist: #eeecf5;
+  --color-line: #e3dfee;
+  --color-line-strong: #c9c2dc;
+  --color-text: #150e29;
+  --color-muted: #595270;
+  --color-on-dark: #f4f2fb;
+  --color-on-dark-muted: #b4adca;
+
+  --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-stage: 1.75rem;
+  --radius-card: 1.125rem;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --shadow-lift: 0 1px 2px rgb(22 15 43 / 0.06), 0 12px 32px -12px rgb(22 15 43 / 0.22);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: 6rem;
+  }
+  body {
+    @apply bg-paper font-sans text-text antialiased;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
+    line-height: 1.04;
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+  :focus-visible {
+    outline: 3px solid var(--color-brand-blue);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  .on-dark :focus-visible { outline-color: var(--color-blue-300); }
+  ::selection { background: var(--color-brand-violet); color: white; }
+  [hidden] { display: none !important; }
+}
+
+@layer components {
+  .wrap {
+    @apply mx-auto w-full max-w-[1360px] px-5 sm:px-8 lg:px-12;
+  }
+
+  /* Display scale (fluid) */
+  .t-hero { font-size: clamp(2.6rem, 1.3rem + 5.6vw, 6.4rem); font-weight: 680; letter-spacing: -0.035em; line-height: 0.96; }
+  .t-display { font-size: clamp(2.2rem, 1.3rem + 3.8vw, 4.6rem); font-weight: 650; letter-spacing: -0.03em; line-height: 1; }
+  .t-h2 { font-size: clamp(1.9rem, 1.3rem + 2.4vw, 3.25rem); font-weight: 640; line-height: 1.05; }
+  .t-h3 { font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.75rem); font-weight: 620; letter-spacing: -0.015em; line-height: 1.15; }
+  .t-lead { font-size: clamp(1.125rem, 1.02rem + 0.45vw, 1.375rem); line-height: 1.5; }
+
+  /* Small uppercase label with an index, e.g. "01 — Attractions" */
+  .eyebrow {
+    @apply inline-flex items-center gap-3 text-[0.78rem] font-semibold tracking-[0.14em] uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  .eyebrow::before {
+    content: '';
+    @apply h-px w-8 bg-current opacity-50;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[0.95rem] font-semibold whitespace-nowrap;
+    transition: background-color 0.25s var(--ease-out-quint), color 0.25s, transform 0.25s var(--ease-out-quint), box-shadow 0.25s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { @apply bg-brand-deep text-white; box-shadow: 0 8px 24px -10px rgb(63 5 123 / 0.6); }
+  .btn-primary:hover { background: #52109a; }
+  .btn-light { @apply bg-white text-ink-900; }
+  .btn-light:hover { @apply bg-mist; }
+  .btn-outline { @apply border border-line-strong text-text; }
+  .btn-outline:hover { @apply border-text; }
+  .btn-ghost-dark { @apply border border-white/25 text-white; }
+  .btn-ghost-dark:hover { @apply border-white/60 bg-white/5; }
+  .btn svg { @apply size-[1.1em] shrink-0; transition: transform 0.3s var(--ease-out-quint); }
+  .btn:hover svg.arrow { transform: translateX(3px); }
+
+  .link {
+    @apply font-semibold text-blue-700 underline decoration-blue-700/30 decoration-2 underline-offset-4;
+    transition: text-decoration-color 0.2s;
+  }
+  .link:hover { @apply decoration-blue-700; }
+  .on-dark .link { @apply text-blue-300 decoration-blue-300/40; }
+
+  /* Stage: the dark, inset hero/feature panel */
+  .stage {
+    @apply relative isolate overflow-hidden bg-ink-900 text-on-dark;
+    border-radius: var(--radius-stage);
+  }
+
+  /* Long-form text */
+  .prose-mf { @apply max-w-[68ch] text-[1.0625rem] leading-[1.75]; }
+  .prose-mf > * + * { margin-top: 1.1em; }
+  .prose-mf h2 { @apply mt-12 text-[1.75rem] font-semibold; }
+  .prose-mf h3 { @apply mt-8 text-[1.3rem] font-semibold; }
+  .prose-mf a { @apply font-semibold text-blue-700 underline decoration-blue-700/30 decoration-2 underline-offset-4 hover:decoration-blue-700; }
+  .prose-mf ul { @apply list-disc pl-5; }
+  .prose-mf ol { @apply list-decimal pl-5; }
+  .prose-mf li + li { margin-top: 0.4em; }
+  .prose-mf img { @apply rounded-[var(--radius-card)]; }
+
+  /* Preview-only "needs confirmation" marker */
+  .draft-flag {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-dashed border-amber-600/60 bg-amber-50 px-2.5 py-0.5 text-[0.7rem] font-semibold tracking-wide text-amber-900 uppercase;
+  }
+}
+
+/* Reveal-on-scroll initial state is applied only once motion.ts confirms JS + motion are available. */
+html.motion-ok [data-reveal] { opacity: 0; transform: translateY(24px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

@@ -1,0 +1,7 @@
+name: "Installation"
+kind: delivery_stage
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Installing the attraction on site."
+order: 5
+status: review

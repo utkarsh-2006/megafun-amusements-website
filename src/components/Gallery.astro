@@ -1,0 +1,162 @@
+---
+/**
+ * Paginated image carousel: 4 images per page on desktop, 2 on tablet, 1 on mobile.
+ * Pages (not individual images) are the snap points, so swiping, dragging, the buttons and
+ * the arrow keys all move one group at a time. Each image opens in the shared Lightbox.
+ * Without JS it is a horizontally scrollable strip with snap points (no dead controls).
+ * Reusable: pass any list of canonical Media records.
+ */
+import { ChevronLeft, ChevronRight } from '@lucide/astro';
+import MediaFrame from './MediaFrame.astro';
+import type { Media } from '../lib/resolve.ts';
+
+interface Props {
+  items: Media[];
+  id: string;
+  label: string;
+}
+const { items, id, label } = Astro.props;
+---
+
+<div class="mf-gallery" data-gallery-root id={id} aria-roledescription="carousel" role="region" aria-label={label}>
+  <ul
+    class="mf-gallery-track flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] lg:gap-6 [&::-webkit-scrollbar]:hidden"
+    data-gallery-track
+    tabindex="0"
+    aria-label={`${label}: use the arrow keys to move between pages`}
+  >
+    {
+      items.map((m, i) => (
+        <li class="mf-gallery-item shrink-0" aria-roledescription="slide" aria-label={`${i + 1} of ${items.length}`}>
+          <figure>
+            <div data-lightbox-item data-gallery={id} data-caption={m.caption ?? m.alt}>
+              <MediaFrame media={m} aspect="4 / 3" sizes="(min-width:1024px) 23vw, (min-width:640px) 46vw, 88vw" class="rounded-[var(--radius-card)]" />
+            </div>
+            {m.caption && <figcaption class="mt-3 text-[0.9rem] text-muted">{m.caption}</figcaption>}
+          </figure>
+        </li>
+      ))
+    }
+    {/* Fillers complete the last page so it aligns to a group boundary (shown by JS as needed). */}
+    {[0, 1, 2].map(() => <li class="mf-gallery-item mf-gallery-filler shrink-0" aria-hidden="true" hidden />)}
+  </ul>
+
+  <div class="mt-8 flex items-center justify-between gap-6" data-gallery-controls hidden>
+    <p class="text-[0.9rem] text-muted tabular-nums" aria-live="polite" data-gallery-status></p>
+    <div class="flex items-center gap-4">
+      <ol class="hidden items-center gap-2 sm:flex" data-gallery-dots></ol>
+      <button type="button" class="inline-flex size-12 items-center justify-center rounded-full border border-line-strong bg-white transition-colors hover:border-text disabled:opacity-40 disabled:hover:border-line-strong" data-gallery-prev aria-controls={id} aria-label="Previous images">
+        <ChevronLeft class="size-5" aria-hidden="true" />
+      </button>
+      <button type="button" class="inline-flex size-12 items-center justify-center rounded-full border border-line-strong bg-white transition-colors hover:border-text disabled:opacity-40 disabled:hover:border-line-strong" data-gallery-next aria-controls={id} aria-label="Next images">
+        <ChevronRight class="size-5" aria-hidden="true" />
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Item widths and page snap points per breakpoint: 1 / 2 / 4 per page. */
+  .mf-gallery-item { width: 88%; scroll-snap-align: start; }
+  @media (min-width: 640px) {
+    .mf-gallery-item { width: calc((100% - 1rem) / 2); scroll-snap-align: none; }
+    .mf-gallery-item:nth-child(2n + 1) { scroll-snap-align: start; }
+  }
+  @media (min-width: 1024px) {
+    .mf-gallery-item { width: calc((100% - 4.5rem) / 4); scroll-snap-align: none; }
+    .mf-gallery-item:nth-child(2n + 1) { scroll-snap-align: none; }
+    .mf-gallery-item:nth-child(4n + 1) { scroll-snap-align: start; }
+  }
+  .mf-gallery-track.is-dragging { scroll-snap-type: none; scroll-behavior: auto; cursor: grabbing; user-select: none; }
+</style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-gallery-root]')) {
+    const track = root.querySelector<HTMLElement>('[data-gallery-track]')!;
+    const items = [...track.children].filter((el) => !el.classList.contains('mf-gallery-filler')) as HTMLElement[];
+    const fillers = [...track.querySelectorAll<HTMLElement>('.mf-gallery-filler')];
+    const fill = () => fillers.forEach((f, i) => (f.hidden = i >= (perPage() - (items.length % perPage())) % perPage()));
+    const controls = root.querySelector<HTMLElement>('[data-gallery-controls]')!;
+    const status = root.querySelector<HTMLElement>('[data-gallery-status]')!;
+    const dots = root.querySelector<HTMLOListElement>('[data-gallery-dots]')!;
+    const prev = root.querySelector<HTMLButtonElement>('[data-gallery-prev]')!;
+    const next = root.querySelector<HTMLButtonElement>('[data-gallery-next]')!;
+
+    const perPage = () => (matchMedia('(min-width: 1024px)').matches ? 4 : matchMedia('(min-width: 640px)').matches ? 2 : 1);
+    const pages = () => Math.max(1, Math.ceil(items.length / perPage()));
+    const pageOffset = (p: number) => Math.min(items[Math.min(p * perPage(), items.length - 1)].offsetLeft - items[0].offsetLeft, track.scrollWidth - track.clientWidth);
+    const current = () => {
+      const x = track.scrollLeft;
+      let best = 0;
+      for (let p = 0; p < pages(); p++) if (Math.abs(pageOffset(p) - x) < Math.abs(pageOffset(best) - x)) best = p;
+      return best;
+    };
+    // Buttons/keys set the page state immediately; swipes and drags derive it from the scroll position.
+    const go = (p: number) => {
+      const target = Math.max(0, Math.min(pages() - 1, p));
+      track.scrollTo({ left: pageOffset(target) });
+      render(target);
+    };
+
+    function render(page?: number) {
+      const p = typeof page === 'number' ? page : current();
+      const n = perPage();
+      const first = p * n + 1;
+      const last = Math.min(items.length, first + n - 1);
+      status.textContent = `Page ${p + 1} of ${pages()} · ${first === last ? `Image ${first}` : `Images ${first}–${last}`} of ${items.length}`;
+      prev.disabled = p === 0;
+      next.disabled = p >= pages() - 1;
+      if (dots.children.length !== pages()) {
+        dots.replaceChildren(
+          ...Array.from({ length: pages() }, (_, i) => {
+            const li = document.createElement('li');
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'block size-2.5 rounded-full bg-line-strong transition-colors aria-[current=true]:bg-brand-deep';
+            b.setAttribute('aria-label', `Go to page ${i + 1}`);
+            b.addEventListener('click', () => go(i));
+            li.append(b);
+            return li;
+          }),
+        );
+      }
+      [...dots.querySelectorAll('button')].forEach((b, i) => b.setAttribute('aria-current', String(i === p)));
+    }
+
+    prev.addEventListener('click', () => go(current() - 1));
+    next.addEventListener('click', () => go(current() + 1));
+    track.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(current() + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(current() - 1); }
+    });
+    // Swipes/drags: update once scrolling settles (debounced; works where `scrollend` is unsupported).
+    let settle = 0;
+    track.addEventListener('scroll', () => { clearTimeout(settle); settle = window.setTimeout(() => render(), 120); }, { passive: true });
+    window.addEventListener('resize', () => { const p = current(); fill(); go(p); render(); });
+
+    // Mouse drag (touch swiping is native scrolling). Releases onto the nearest page.
+    let startX = 0, startLeft = 0, startPage = 0, dragging = false, moved = false;
+    track.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      dragging = true; moved = false; startX = e.clientX; startLeft = track.scrollLeft; startPage = current();
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 6) { moved = true; track.classList.add('is-dragging'); }
+      if (moved) track.scrollLeft = startLeft - dx;
+    });
+    window.addEventListener('pointerup', (e) => {
+      if (!dragging) return;
+      dragging = false;
+      if (!moved) return;
+      track.classList.remove('is-dragging');
+      const dx = e.clientX - startX;
+      go(Math.abs(dx) > 40 ? startPage + (dx < 0 ? 1 : -1) : startPage);
+    });
+    // A drag must not also open the lightbox.
+    track.addEventListener('click', (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+
+    if (items.length) { fill(); controls.hidden = false; render(); }
+  }
+</script>

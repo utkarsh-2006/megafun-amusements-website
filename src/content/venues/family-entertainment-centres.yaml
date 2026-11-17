@@ -1,0 +1,17 @@
+name: "Family entertainment centres"
+slug: family-entertainment-centres
+summary: "A mixed set of attractions under one roof for families and groups."
+context:
+  - "FEC owners and investors build a mix of attractions that appeal across ages and keep guests on site longer."
+  - "They need help choosing a coherent combination and planning the space it needs."
+needs:
+  - title: "Attraction mix"
+    text: "A balanced combination across ages and interests."
+  - title: "Repeat visits"
+    text: "Experiences guests want to return to."
+  - title: "Project support"
+    text: "Help from selection through to opening."
+planning: []
+combinations: []
+order: 3
+status: review

@@ -1,0 +1,21 @@
+name: "9D VR Simulator — 6 Seats"
+slug: 9d-vr-6-seater
+operationalStatus: active
+status: review
+primaryCategory: virtual-reality
+secondaryCategories: []
+summary: "A six-seat virtual-reality motion simulator on an electric motion base."
+experience:
+  - "Up to six guests ride together, each wearing a VR headset, while an electric motion base moves the seats in sync with the virtual ride."
+features:
+  - "Six seats"
+  - "Electric motion base"
+  - "VR headset per rider"
+variants: []
+suitableVenues: []
+media:
+  - "9d-vr-6-seater-still-1"
+  - "9d-vr-6-seater-still-2"
+specifications: []
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17). Existing site shows \"Availability: False\"; confirm operational status."

@@ -1,0 +1,7 @@
+name: "Attraction selection"
+kind: delivery_stage
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Choosing the attractions that suit the venue, its visitors and its space."
+order: 2
+status: review

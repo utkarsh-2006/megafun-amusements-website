@@ -1,0 +1,83 @@
+---
+/**
+ * The one Projects archive (brief §4.6). Filter views are separate pre-rendered pages
+ * that reuse this component; filters are plain links, so they work without JS.
+ * Gallery is a view mode of this same collection, not a second collection.
+ */
+import { ArrowRight } from '@lucide/astro';
+import PageHeader from './PageHeader.astro';
+import ProjectCard from './ProjectCard.astro';
+import EnquiryClose from './EnquiryClose.astro';
+import Lightbox from './Lightbox.astro';
+import { site } from '../lib/content.ts';
+
+interface Props {
+  filter?: { kind: 'attraction' | 'venue'; id: string };
+}
+const { filter } = Astro.props;
+const r = await site();
+const list = r.projects.filter((p) =>
+  !filter ? true : filter.kind === 'attraction' ? p.categories.includes(filter.id) : p.venues.includes(filter.id),
+);
+const label = filter ? (filter.kind === 'attraction' ? r.categoryById.get(filter.id)?.name : r.venueById.get(filter.id)?.name) : undefined;
+const chip = 'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[0.95rem] transition-colors';
+const on = 'border-brand-deep bg-brand-deep text-white';
+const off = 'border-line-strong bg-white hover:border-text';
+const count = (pred: (p: (typeof r.projects)[number]) => boolean) => r.projects.filter(pred).length;
+---
+
+<PageHeader
+  crumbs={filter ? [{ label: 'Projects', href: '/projects/' }, { label: label ?? '' }] : [{ label: 'Projects' }]}
+  eyebrow={`${r.projects.length} projects`}
+  title={filter ? `Projects: ${label}` : 'Attractions at work in real venues'}
+  lead="Approved installations and projects. Case studies open in full; showcase entries open in the image viewer."
+/>
+
+<section class="wrap py-14 lg:py-20" aria-label="Project archive">
+  {
+    (r.filters.byAttraction.length > 0 || r.filters.byVenue.length > 0) && (
+      <nav aria-label="Filter projects" class="mb-14 space-y-4">
+        {r.filters.byAttraction.length > 0 && (
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="w-full text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase sm:mr-3 sm:w-auto">Attraction type</span>
+            <a href="/projects/" class:list={[chip, !filter ? on : off]} aria-current={!filter ? 'page' : undefined}>All</a>
+            {r.filters.byAttraction.map((c) => {
+              const active = filter?.kind === 'attraction' && filter.id === c.id;
+              return (
+                <a href={`/projects/by-attraction/${c.slug}/`} class:list={[chip, active ? on : off]} aria-current={active ? 'page' : undefined}>
+                  {c.name} <span class="tabular-nums opacity-70">{count((p) => p.categories.includes(c.id))}</span>
+                </a>
+              );
+            })}
+          </div>
+        )}
+        {r.filters.byVenue.length > 0 && (
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="w-full text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase sm:mr-3 sm:w-auto">Venue type</span>
+            {r.filters.byVenue.map((v) => {
+              const active = filter?.kind === 'venue' && filter.id === v.id;
+              return (
+                <a href={`/projects/by-venue/${v.slug}/`} class:list={[chip, active ? on : off]} aria-current={active ? 'page' : undefined}>
+                  {v.name} <span class="tabular-nums opacity-70">{count((p) => p.venues.includes(v.id))}</span>
+                </a>
+              );
+            })}
+          </div>
+        )}
+      </nav>
+    )
+  }
+
+  <h2 class="sr-only">{filter ? `${list.length} projects: ${label}` : `All ${list.length} projects`}</h2>
+  <div class="grid gap-x-8 gap-y-16 md:grid-cols-2 lg:grid-cols-3">{list.map((p) => <ProjectCard project={p} />)}</div>
+  {
+    filter && (
+      <a href="/projects/" class="link mt-14 inline-flex items-center gap-2">
+        All projects <ArrowRight class="size-4" aria-hidden="true" />
+      </a>
+    )
+  }
+</section>
+
+<div class="pt-3"><EnquiryClose source="projects" title="Planning something similar?" cta="Discuss a similar project" /></div>
+<Lightbox />

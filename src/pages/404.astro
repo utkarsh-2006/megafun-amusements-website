@@ -1,0 +1,41 @@
+---
+/** Custom 404 (Cloudflare Pages serves dist/404.html for unknown paths). */
+import { ArrowRight } from '@lucide/astro';
+import Base from '../layouts/Base.astro';
+import Ribbon from '../components/Ribbon.astro';
+import { site } from '../lib/content.ts';
+
+const r = await site();
+const links = [
+  { label: 'Home', href: '/' },
+  { label: 'Attractions', href: '/attractions/' },
+  ...(r.projectsLive ? [{ label: 'Projects', href: '/projects/' }] : []),
+  { label: 'Updates', href: '/updates/' },
+  { label: 'Contact', href: '/contact/' },
+];
+---
+
+<Base title="Page not found" description="The page you were looking for could not be found." noindex pageType="404">
+  <section class="px-3 pt-1 sm:px-4">
+    <div class="stage on-dark">
+      <Ribbon class="pointer-events-none absolute -right-20 -bottom-10 w-[900px] max-w-none text-white opacity-60 lg:w-[1200px]" draw="load" id="nf-ribbon" />
+      <div class="wrap relative py-28 lg:py-40">
+        <p class="eyebrow text-blue-300">Error 404</p>
+        <h1 class="t-display mt-6 max-w-[14ch]">This ride doesn’t exist.</h1>
+        <p class="t-lead mt-6 max-w-[44ch] text-on-dark-muted">The page may have moved, or the link may be out of date. Try one of these instead.</p>
+        <ul class="mt-10 flex flex-wrap gap-3">
+          {
+            links.map((l, i) => (
+              <li>
+                <a href={l.href} class:list={['btn', i === 0 ? 'btn-light' : 'btn-ghost-dark']}>
+                  {l.label} {i === 0 && <ArrowRight class="arrow" aria-hidden="true" />}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+  <div class="h-3"></div>
+</Base>

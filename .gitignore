@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+dist-thin/
+dist-full/
+fixtures/
+
+# Internal brief stays out of the repository
+*.docx
+dist-preview/
+
+# Local tool configuration
+.claude/

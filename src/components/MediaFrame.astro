@@ -1,0 +1,74 @@
+---
+/**
+ * Renders one canonical Media record at a fixed aspect ratio (no layout shift when
+ * real assets replace placeholders).
+ * - image: responsive astro:assets <Image>
+ * - video: click-to-load external embed with poster and text alternative
+ * - placeholder (preview builds only): a clearly labelled development panel
+ */
+import { Image } from 'astro:assets';
+import { ImageOff } from '@lucide/astro';
+import VideoEmbed from './VideoEmbed.astro';
+import { imageFor, site } from '../lib/content.ts';
+import type { Media } from '../lib/resolve.ts';
+
+interface Props {
+  media?: Media;
+  aspect?: string;
+  sizes?: string;
+  widths?: number[];
+  eager?: boolean;
+  class?: string;
+  imgClass?: string;
+  /** Tone of the placeholder panel */
+  tone?: 'light' | 'dark';
+}
+const {
+  media,
+  aspect = '4 / 3',
+  sizes = '(min-width: 1024px) 33vw, 100vw',
+  widths = [400, 640, 960, 1280, 1600],
+  eager = false,
+  class: cls = '',
+  imgClass = '',
+  tone = 'light',
+} = Astro.props;
+
+const img = media && !media.placeholder ? imageFor(media) : undefined;
+const poster = media?.kind === 'video' && media.poster ? (await site()).media.get(media.poster) : undefined;
+const posterImg = poster && !poster.placeholder ? imageFor(poster) : undefined;
+---
+
+<div class:list={['relative overflow-hidden', cls]} style={`aspect-ratio:${aspect}`}>
+  {
+    !media || media.placeholder ? (
+      <div
+        class:list={[
+          '@container absolute inset-0 flex flex-col gap-1 p-4 text-left text-[0.75rem] leading-snug sm:p-5',
+          tone === 'dark' ? 'bg-ink-800 text-on-dark-muted' : 'bg-mist text-muted',
+        ]}
+        style="background-image:repeating-linear-gradient(135deg, transparent 0 14px, rgb(127 110 170 / 0.09) 14px 15px)"
+        role="img"
+        aria-label={`Development placeholder: ${media?.awaiting ?? 'awaiting approved media'}`}
+        data-placeholder
+      >
+        <ImageOff class="size-5 shrink-0 opacity-60" aria-hidden="true" />
+        <!-- Text only where there is room; tiny thumbnails show the icon alone. -->
+        <span class="mt-2 font-semibold tracking-[0.12em] uppercase @max-[11rem]:hidden">Development placeholder</span>
+        <span class="max-w-[32ch] opacity-90 @max-[15rem]:hidden">{media?.awaiting ?? 'Awaiting approved media'}</span>
+      </div>
+    ) : media.kind === 'image' && img ? (
+      <Image
+        src={img}
+        alt={media.decorative ? '' : media.alt}
+        widths={widths.filter((w) => w <= img.width)}
+        sizes={sizes}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : undefined}
+        class:list={['absolute inset-0 size-full object-cover', imgClass]}
+      />
+    ) : media.kind === 'video' ? (
+      <VideoEmbed media={media} poster={posterImg} posterAlt={poster?.alt} />
+    ) : null
+  }
+</div>

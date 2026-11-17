@@ -1,0 +1,29 @@
+---
+/**
+ * The brand "track ribbon": a ride-track sweep that resolves into the swirl from the
+ * logo, in the logo's blue → violet → magenta. Decorative only (aria-hidden).
+ */
+interface Props {
+  class?: string;
+  /** 'load' draws once on page load; 'scroll' draws with scroll; 'none' is static. */
+  draw?: 'load' | 'scroll' | 'none';
+  id?: string;
+  width?: number;
+}
+const { class: cls = '', draw = 'none', id = 'ribbon', width = 22 } = Astro.props;
+const d =
+  'M-40 470 C 140 520, 300 360, 470 392 S 760 572, 905 430 S 1060 150, 950 118 C 860 92, 820 222, 905 246 C 962 262, 1000 196, 958 178 C 930 166, 905 196, 925 210';
+const attr = draw === 'load' ? { 'data-draw': '' } : draw === 'scroll' ? { 'data-draw-scroll': '' } : {};
+---
+
+<svg viewBox="0 0 1200 600" fill="none" aria-hidden="true" focusable="false" class={cls} preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id={`${id}-g`} x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1983f1" />
+      <stop offset="0.62" stop-color="#a352ed" />
+      <stop offset="1" stop-color="#e332f1" />
+    </linearGradient>
+  </defs>
+  <path d={d} stroke={`url(#${id}-g)`} stroke-width={width} stroke-linecap="round" stroke-linejoin="round" {...attr} />
+  <path d={d} stroke="currentColor" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="2 14" transform="translate(0 34)" />
+</svg>

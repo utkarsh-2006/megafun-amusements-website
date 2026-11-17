@@ -1,0 +1,22 @@
+name: "Jungle Safari"
+slug: jungle-safari
+operationalStatus: active
+status: review
+primaryCategory: themed-walkthroughs
+secondaryCategories: []
+summary: "A jungle-themed walkthrough with dinosaur, crocodile, gorilla and tiger scenes."
+experience:
+  - "Guests walk through jungle scenery past themed animal and dinosaur scenes."
+features:
+  - "Dinosaur, crocodile, gorilla and tiger scenes"
+variants: []
+suitableVenues: []
+media:
+  - "jungle-safari-still-1"
+  - "jungle-safari-still-2"
+specifications:
+  - label: "Area"
+    value: "800 sq ft or more"
+    verified: false
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17)"

@@ -1,0 +1,79 @@
+---
+/**
+ * Accessible image viewer for `[data-lightbox-item]` figures. Progressive enhancement:
+ * without JS the figures are ordinary images and no controls are shown. Uses native
+ * <dialog> (focus containment, Esc to close, focus returns to the trigger).
+ * Include once per page that has lightbox items.
+ */
+import { X, ChevronLeft, ChevronRight } from '@lucide/astro';
+---
+
+<dialog id="lightbox" class="m-auto h-dvh max-h-none w-full max-w-none bg-ink-950/95 p-0 text-on-dark backdrop:bg-ink-950/80" aria-label="Image viewer">
+  <div class="flex h-full flex-col">
+    <div class="flex items-center justify-between gap-4 p-4 sm:p-6">
+      <p class="text-[0.9rem] text-on-dark-muted" data-lb-count aria-live="polite"></p>
+      <button type="button" class="inline-flex size-12 items-center justify-center rounded-full border border-white/25 hover:bg-white/10" data-lb-close aria-label="Close viewer">
+        <X class="size-5" aria-hidden="true" />
+      </button>
+    </div>
+    <figure class="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-4 pb-6 sm:px-20">
+      <div class="w-full max-w-6xl overflow-hidden rounded-[var(--radius-card)] [&_img]:object-contain" data-lb-stage></div>
+      <figcaption class="max-w-3xl text-center text-on-dark-muted" data-lb-caption></figcaption>
+      <button type="button" class="absolute top-1/2 left-2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-ink-950/60 hover:bg-white/10 sm:left-5" data-lb-prev aria-label="Previous image">
+        <ChevronLeft class="size-5" aria-hidden="true" />
+      </button>
+      <button type="button" class="absolute top-1/2 right-2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-ink-950/60 hover:bg-white/10 sm:right-5" data-lb-next aria-label="Next image">
+        <ChevronRight class="size-5" aria-hidden="true" />
+      </button>
+    </figure>
+  </div>
+</dialog>
+
+<script>
+  const dlg = document.getElementById('lightbox') as HTMLDialogElement;
+  const stage = dlg.querySelector<HTMLElement>('[data-lb-stage]')!;
+  const caption = dlg.querySelector<HTMLElement>('[data-lb-caption]')!;
+  const count = dlg.querySelector<HTMLElement>('[data-lb-count]')!;
+  const prev = dlg.querySelector<HTMLButtonElement>('[data-lb-prev]')!;
+  const next = dlg.querySelector<HTMLButtonElement>('[data-lb-next]')!;
+  let group: HTMLElement[] = [];
+  let index = 0;
+
+  function show(i: number) {
+    index = (i + group.length) % group.length;
+    const item = group[index];
+    const frame = item.firstElementChild!.cloneNode(true) as HTMLElement;
+    frame.querySelectorAll('img').forEach((img) => {
+      img.sizes = '90vw';
+      img.loading = 'eager';
+    });
+    stage.replaceChildren(frame);
+    caption.textContent = item.dataset.caption ?? '';
+    count.textContent = group.length > 1 ? `Image ${index + 1} of ${group.length}` : '';
+    prev.hidden = next.hidden = group.length < 2;
+  }
+
+  // Enhance each visible item with a real button.
+  document.querySelectorAll<HTMLElement>('[data-lightbox-item]:not([hidden])').forEach((item) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'absolute inset-0 z-10 cursor-zoom-in rounded-[var(--radius-card)]';
+    btn.setAttribute('aria-label', `View larger: ${item.dataset.caption ?? 'image'}`);
+    btn.addEventListener('click', () => {
+      group = [...document.querySelectorAll<HTMLElement>(`[data-lightbox-item][data-gallery="${item.dataset.gallery}"]`)];
+      show(group.indexOf(item));
+      dlg.showModal();
+    });
+    item.classList.add('relative');
+    item.append(btn);
+  });
+
+  prev.addEventListener('click', () => show(index - 1));
+  next.addEventListener('click', () => show(index + 1));
+  dlg.querySelector('[data-lb-close]')!.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') show(index - 1);
+    if (e.key === 'ArrowRight') show(index + 1);
+  });
+  dlg.addEventListener('click', (e) => e.target === dlg && dlg.close());
+</script>

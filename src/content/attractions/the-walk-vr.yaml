@@ -1,0 +1,20 @@
+name: "The Walk VR"
+slug: the-walk-vr
+operationalStatus: active
+status: review
+primaryCategory: virtual-reality
+secondaryCategories: []
+summary: "A virtual-reality challenge: walk a narrow plank high above a city skyline."
+experience:
+  - "Wearing a VR headset, a guest steps onto a plank that appears to hang 400 metres above a city and tries to walk its length."
+features:
+  - "VR headset experience"
+  - "Single-guest walk-through format"
+variants: []
+suitableVenues: []
+media:
+  - "the-walk-vr-still-1"
+  - "the-walk-vr-still-2"
+specifications: []
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17)"

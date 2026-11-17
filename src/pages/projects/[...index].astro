@@ -1,0 +1,14 @@
+---
+/** /projects/ — only when ≥3 approved showcase-grade projects exist (brief §6). */
+import Base from '../../layouts/Base.astro';
+import ProjectsArchive from '../../components/ProjectsArchive.astro';
+import { site } from '../../lib/content.ts';
+
+export async function getStaticPaths() {
+  return (await site()).projectsLive ? [{ params: { index: undefined } }] : [];
+}
+---
+
+<Base title="Projects" description="Approved Mega Fun Amusements installations, showcase projects and case studies." pageType="projects">
+  <ProjectsArchive />
+</Base>

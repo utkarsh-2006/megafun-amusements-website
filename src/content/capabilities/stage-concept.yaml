@@ -1,0 +1,7 @@
+name: "Concept"
+kind: delivery_stage
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Shaping the attraction or venue idea with the client: audience, story and the space available."
+order: 1
+status: review

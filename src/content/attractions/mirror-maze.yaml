@@ -1,0 +1,24 @@
+name: "Mirror Maze"
+slug: mirror-maze
+operationalStatus: active
+status: review
+primaryCategory: illusion-experiences
+secondaryCategories: []
+summary: "A walk-through maze where mirrors multiply every path and reflection."
+experience:
+  - "Guests find their way through corridors lined with mirrors, where reflections make the maze appear far larger than it is."
+features: []
+variants: []
+suitableVenues: []
+media:
+  - "mirror-maze-still-1"
+  - "mirror-maze-still-2"
+specifications:
+  - label: "Minimum area"
+    value: "600 sq ft"
+    verified: false
+  - label: "Power"
+    value: "Below 1 kW"
+    verified: false
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17)"

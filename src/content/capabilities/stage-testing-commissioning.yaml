@@ -1,0 +1,7 @@
+name: "Testing & commissioning"
+kind: delivery_stage
+deliveryModel: in_house
+deliveryModelConfirmed: false
+description: "Testing the attraction and commissioning it for operation."
+order: 6
+status: review

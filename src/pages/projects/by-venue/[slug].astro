@@ -1,0 +1,15 @@
+---
+/** Pre-rendered filter view: canonical /projects/, noindex (brief §3.2). */
+import Base from '../../../layouts/Base.astro';
+import ProjectsArchive from '../../../components/ProjectsArchive.astro';
+import { site } from '../../../lib/content.ts';
+
+export async function getStaticPaths() {
+  return (await site()).filters.byVenue.map((v) => ({ params: { slug: v.slug }, props: { id: v.id, name: v.name } }));
+}
+const { id, name } = Astro.props;
+---
+
+<Base title={`Projects: ${name}`} description={`Mega Fun Amusements projects for ${name.toLowerCase()}.`} canonical="/projects/" noindex pageType="projects">
+  <ProjectsArchive filter={{ kind: 'venue', id }} />
+</Base>

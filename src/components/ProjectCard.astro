@@ -1,0 +1,65 @@
+---
+/**
+ * One card pattern for both project depths (brief §4.6):
+ * - case study → links to its detail page
+ * - showcase   → non-link card; its media opens in the accessible image viewer (JS) and
+ *                stays a plain figure without JS. Never links to a standalone page.
+ */
+import { ArrowUpRight } from '@lucide/astro';
+import MediaFrame from './MediaFrame.astro';
+import DraftFlag from './DraftFlag.astro';
+import type { Project } from '../lib/resolve.ts';
+import { site } from '../lib/content.ts';
+
+interface Props {
+  project: Project;
+  dark?: boolean;
+  sizes?: string;
+}
+const { project: p, dark = false, sizes = '(min-width:1024px) 40vw, 100vw' } = Astro.props;
+const r = await site();
+const venueNames = p.venues.map((v) => r.venueById.get(v)?.name).filter(Boolean);
+const meta = [venueNames[0], p.disclosureApproved || r.preview ? p.location : undefined, p.year].filter(Boolean);
+const href = p.hasPage ? `/projects/${p.slug}/` : undefined;
+const cover = p.mediaItems[0];
+---
+
+<article class="group relative flex flex-col" data-reveal data-project data-categories={p.categories.join(' ')} data-venues={p.venues.join(' ')}>
+  {
+    href ? (
+      <MediaFrame media={cover} aspect="3 / 2" sizes={sizes} tone={dark ? 'dark' : 'light'} class="rounded-[var(--radius-card)]" imgClass="transition-transform duration-700 group-hover:scale-[1.03]" />
+    ) : (
+      <div data-lightbox-item data-gallery={`project-${p.id}`} data-caption={cover?.caption ?? p.title}>
+        <MediaFrame media={cover} aspect="3 / 2" sizes={sizes} tone={dark ? 'dark' : 'light'} class="rounded-[var(--radius-card)]" />
+      </div>
+    )
+  }
+  {
+    !href &&
+      p.mediaItems.slice(1).map((m) => (
+        <div hidden data-lightbox-item data-gallery={`project-${p.id}`} data-caption={m.caption ?? p.title}>
+          <MediaFrame media={m} aspect="3 / 2" sizes="90vw" />
+        </div>
+      ))
+  }
+  <div class="mt-5 flex items-start justify-between gap-4">
+    <div>
+      <p class:list={['flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8rem] font-semibold tracking-[0.1em] uppercase', dark ? 'text-on-dark-muted' : 'text-muted']}>
+        <span class:list={['rounded-full px-2.5 py-0.5', dark ? 'bg-white/10 text-white' : 'bg-mist text-text']}>{p.depth === 'case-study' ? 'Case study' : 'Showcase'}</span>
+        {meta.map((m) => <span>{m}</span>)}
+      </p>
+      <h3 class="t-h3 mt-3">
+        {href ? <a href={href} class="after:absolute after:inset-0 after:content-['']">{p.title}</a> : p.title}
+      </h3>
+      <p class:list={['mt-2', dark ? 'text-on-dark-muted' : 'text-muted']}>{p.summary}</p>
+      <DraftFlag when={p.draft} class="mt-3" />
+    </div>
+    {
+      href && (
+        <span class="mt-1 flex size-10 shrink-0 items-center justify-center rounded-full border border-current/30 transition-colors group-hover:bg-white group-hover:text-ink-900" aria-hidden="true">
+          <ArrowUpRight class="size-4" />
+        </span>
+      )
+    }
+  </div>
+</article>

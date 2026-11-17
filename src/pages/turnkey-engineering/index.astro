@@ -1,0 +1,157 @@
+---
+/**
+ * Turnkey & Engineering — brief §4.5. Always present (top-level navigation). Built only from
+ * canonical capability and credential records; nothing about capabilities is authored here.
+ * Credentials live here (#credentials) once ≥2 are current — there is no separate page.
+ */
+import { ArrowRight, Download, FileText } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import ProcessTrack from '../../components/ProcessTrack.astro';
+import CapabilityList from '../../components/CapabilityList.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import EnquiryClose from '../../components/EnquiryClose.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import Ribbon from '../../components/Ribbon.astro';
+import DraftFlag from '../../components/DraftFlag.astro';
+import { site, formatDate } from '../../lib/content.ts';
+
+const r = await site();
+const stages = r.capabilities.filter((c) => c.kind === 'delivery_stage');
+const technical = r.capabilities.filter((c) => c.kind === 'technical' || c.kind === 'service');
+const facilities = r.capabilities.filter((c) => c.kind === 'facility');
+const caseStudies = r.projects.filter((p) => p.hasPage).slice(0, 3);
+const models = new Set(r.capabilities.map((c) => c.deliveryModel));
+---
+
+<Base
+  title="Turnkey & Engineering"
+  description="How Mega Fun Amusements delivers attraction projects, from concept and attraction selection to manufacturing, installation and commissioning."
+  pageType="turnkey"
+>
+  <PageHeader
+    crumbs={[{ label: 'Turnkey & Engineering' }]}
+    eyebrow="Turnkey & Engineering"
+    title="A project partner from first idea to opening day"
+    lead="For venue owners and developers who want one accountable partner for their attractions. Below is each stage and capability we deliver, labelled by who delivers it."
+  >
+    {
+      r.capabilityProfile && (
+        <a href={`/documents/${r.capabilityProfile.file}`} class="btn btn-outline mt-8" download data-track="capability_profile_download" data-track-source="turnkey">
+          <Download aria-hidden="true" /> Download capability profile
+        </a>
+      )
+    }
+    <Fragment slot="aside">
+      <div class="relative hidden aspect-[4/3] overflow-hidden rounded-[var(--radius-stage)] bg-ink-900 text-white lg:block" aria-hidden="true">
+        <Ribbon class="absolute inset-0 m-auto w-[130%] max-w-none -translate-x-[8%]" draw="load" id="tk-ribbon" />
+      </div>
+    </Fragment>
+  </PageHeader>
+
+  {
+    stages.length > 0 && (
+      <section class="wrap py-20 lg:py-28" aria-labelledby="h-stages">
+        <div class="max-w-2xl" data-reveal>
+          <p class="eyebrow text-blue-700">Delivery stages</p>
+          <h2 id="h-stages" class="t-h2 mt-5">How a project runs</h2>
+        </div>
+        <div class="mt-16"><ProcessTrack stages={stages} /></div>
+      </section>
+    )
+  }
+
+  {
+    technical.length > 0 && (
+      <section class="border-t border-line bg-white" aria-labelledby="h-tech">
+        <div class="wrap grid gap-12 py-20 lg:grid-cols-12 lg:py-28">
+          <div class="lg:col-span-4" data-reveal>
+            <p class="eyebrow text-blue-700">Engineering</p>
+            <h2 id="h-tech" class="t-h2 mt-5">Technical capabilities</h2>
+          </div>
+          <div class="lg:col-span-8"><CapabilityList items={technical} showEvidence /></div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    facilities.length > 0 && (
+      <section class="wrap grid gap-12 py-20 lg:grid-cols-12 lg:py-28" aria-labelledby="h-fac">
+        <div class="lg:col-span-4" data-reveal>
+          <p class="eyebrow text-blue-700">Facilities</p>
+          <h2 id="h-fac" class="t-h2 mt-5">Where it’s made</h2>
+        </div>
+        <div class="lg:col-span-8"><CapabilityList items={facilities} showEvidence /></div>
+      </section>
+    )
+  }
+
+  {
+    models.size > 1 && (
+      <section class="wrap pb-16" aria-label="Delivery model key">
+        <p class="max-w-3xl rounded-[var(--radius-card)] border border-line bg-white p-6 text-[0.95rem] text-muted">
+          <strong class="text-text">In-house</strong> work is carried out by Mega Fun Amusements. <strong class="text-text">Partner-delivered</strong> work is carried out by a
+          partner organisation. <strong class="text-text">Externally sourced</strong> items are procured from third-party suppliers.
+        </p>
+      </section>
+    )
+  }
+
+  {
+    !r.turnkeyLive && (
+      <section class="wrap py-20 lg:py-28" aria-labelledby="h-pending">
+        <div class="max-w-2xl rounded-[var(--radius-stage)] border border-line bg-white p-8 lg:p-12" data-reveal>
+          <h2 id="h-pending" class="t-h3">Delivery details are being confirmed</h2>
+          <p class="mt-3 text-muted">The stages and capabilities we deliver in-house and with partners will be listed here once confirmed. To discuss a project now, get in touch.</p>
+          <a href="/contact/?intent=project&source=turnkey#enquiry" class="btn btn-outline mt-8" data-track="project_cta_click" data-track-source="turnkey">Discuss a Project <ArrowRight class="arrow" aria-hidden="true" /></a>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    r.credentialsLive && (
+      <section id="credentials" class="scroll-mt-24 border-t border-line bg-white" aria-labelledby="h-cred">
+        <div class="wrap py-20 lg:py-28">
+          <p class="eyebrow text-blue-700">Credentials</p>
+          <h2 id="h-cred" class="t-h2 mt-5">Current credentials</h2>
+          <ul class="mt-12 grid gap-6 md:grid-cols-2">
+            {r.credentials.map((c) => {
+              const doc = c.document ? r.media.get(c.document) : undefined;
+              return (
+                <li class="rounded-[var(--radius-card)] border border-line bg-paper p-8" data-reveal>
+                  <p class="text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">{c.type}</p>
+                  <h3 class="t-h3 mt-2">{c.name} <DraftFlag when={c.draft} /></h3>
+                  <dl class="mt-6 grid grid-cols-2 gap-4 text-[0.95rem]">
+                    <div><dt class="text-muted">Issued by</dt><dd class="font-semibold">{c.issuer}</dd></div>
+                    {c.identifier && <div><dt class="text-muted">Reference</dt><dd class="font-semibold">{c.identifier}</dd></div>}
+                    {c.expires && <div><dt class="text-muted">Valid until</dt><dd class="font-semibold">{formatDate(c.expires)}</dd></div>}
+                    {c.verifiedOn && <div><dt class="text-muted">Last verified</dt><dd class="font-semibold">{formatDate(c.verifiedOn)}</dd></div>}
+                  </dl>
+                  {doc?.file && (
+                    <a href={`/documents/${doc.file}`} class="link mt-6 inline-flex items-center gap-2"><FileText class="size-4" aria-hidden="true" /> View document</a>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    caseStudies.length > 0 && (
+      <section class="border-t border-line" aria-labelledby="h-cs">
+        <div class="wrap py-20 lg:py-28">
+          <h2 id="h-cs" class="t-h2" data-reveal>Case studies</h2>
+          <div class="mt-12 grid gap-x-8 gap-y-14 md:grid-cols-2 lg:grid-cols-3">{caseStudies.map((p) => <ProjectCard project={p} />)}</div>
+        </div>
+      </section>
+    )
+  }
+
+  <div class="pt-3"><EnquiryClose source="turnkey" /></div>
+  <Lightbox />
+</Base>

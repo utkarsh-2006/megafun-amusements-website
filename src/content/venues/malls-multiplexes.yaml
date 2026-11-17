@@ -1,0 +1,17 @@
+name: "Malls & multiplexes"
+slug: malls-multiplexes
+summary: "Indoor entertainment for retail and cinema destinations."
+context:
+  - "Mall and multiplex developers look for compact indoor attractions that draw footfall and fit within a defined floor plate."
+  - "Space, ceiling height, power supply and operating hours shape which attractions are practical."
+needs:
+  - title: "Compact footprint"
+    text: "Attractions that fit leased indoor space."
+  - title: "Footfall"
+    text: "Experiences that bring visitors into the centre."
+  - title: "Site constraints"
+    text: "Clear space, power and ceiling requirements early in planning."
+planning: []
+combinations: []
+order: 2
+status: review

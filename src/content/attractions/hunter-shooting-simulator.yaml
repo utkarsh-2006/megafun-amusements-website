@@ -1,0 +1,20 @@
+name: "Hunter Shooting Simulator"
+slug: hunter-shooting-simulator
+operationalStatus: active
+status: review
+primaryCategory: interactive-games
+secondaryCategories: [virtual-reality]
+summary: "A shooting-game simulator with omni-directional motion control and environmental effects."
+experience:
+  - "Players aim at targets in a simulated hunt while motion control and environmental effects react to the game."
+features:
+  - "Omni-directional motion control"
+  - "Environmental effects"
+variants: []
+suitableVenues: []
+media:
+  - "hunter-shooting-simulator-still-1"
+  - "hunter-shooting-simulator-still-2"
+specifications: []
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17)"

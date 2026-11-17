@@ -1,0 +1,108 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { company } from '../config/company.ts';
+import { siteUrl, previewMode, usingFixtures, contentRoot } from '../config/build.ts';
+import { analytics, analyticsEnabled } from '../config/analytics.ts';
+
+interface Props {
+  /** Page title without the site name. Omit on the homepage. */
+  title?: string;
+  /** Complete <title> override (used by the homepage's unique SEO title). */
+  fullTitle?: string;
+  description: string;
+  /** Path for rel=canonical when it differs from this URL (e.g. filter views → /projects/). */
+  canonical?: string;
+  noindex?: boolean;
+  /** Absolute or root-relative URL of an approved Open Graph image. */
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+  /** Page type sent with analytics events (no personal data). */
+  pageType: string;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const { title, fullTitle: titleOverride, description, canonical, noindex = false, ogImage = '/og-default.png', ogType = 'website', pageType, jsonLd } = Astro.props;
+const fullTitle = titleOverride ?? (title ? `${title} | ${company.name}` : `${company.name} — Amusement attractions, engineered and delivered`);
+const canonicalUrl = new URL(canonical ?? Astro.url.pathname, siteUrl).href;
+const robots = previewMode ? 'noindex, nofollow' : noindex ? 'noindex, follow' : 'index, follow';
+
+const org = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: company.name,
+  url: siteUrl,
+  logo: new URL('/icon-512.png', siteUrl).href,
+  ...(company.contact.email.confirmed ? { email: company.contact.email.value } : {}),
+  ...(company.contact.phone.confirmed ? { telephone: company.contact.phone.value.tel } : {}),
+  ...(company.founded.confirmed ? { foundingDate: String(company.founded.value) } : {}),
+};
+const ld = [org, ...(jsonLd ? [jsonLd].flat() : [])];
+---
+
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta name="robots" content={robots} />
+    <meta name="theme-color" content="#f6f5fa" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="sitemap" href="/sitemap.xml" />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={company.name} />
+    <meta property="og:title" content={title ?? fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={new URL(ogImage, siteUrl).href} />
+    <meta property="og:locale" content="en_GB" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {ld.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
+
+    <script is:inline>
+      // Hide reveal targets only when motion will actually run; un-hide if motion.ts never loads.
+      (function (d) {
+        d.classList.add('js');
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          d.classList.add('motion-ok');
+          setTimeout(function () { if (!window.__mfMotion) d.classList.remove('motion-ok'); }, 2500);
+        }
+      })(document.documentElement);
+    </script>
+    {
+      analyticsEnabled && analytics.provider === 'plausible' && (
+        <script is:inline defer data-domain={analytics.domain} src="https://plausible.io/js/script.tagged-events.js" />
+      )
+    }
+  </head>
+  <body data-page-type={pageType} class="min-h-dvh">
+    <a href="#main" class="sr-only z-[100] rounded-full bg-white px-5 py-3 font-semibold text-text shadow-lift focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+      Skip to content
+    </a>
+    {
+      previewMode && (
+        <div class="relative z-[60] bg-amber-300 px-5 py-2 text-center text-[0.8rem] font-semibold text-amber-950" role="note">
+          Preview build — includes draft content and placeholder media awaiting company approval. Not for publication.
+          {usingFixtures && <span> · Fixture library: {contentRoot}</span>}
+        </div>
+      )
+    }
+    <Header />
+    <main id="main" tabindex="-1" class="outline-none">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      import '../scripts/analytics.ts';
+      // GSAP is only fetched when motion will actually run.
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) import('../scripts/motion.ts');
+    </script>
+  </body>
+</html>

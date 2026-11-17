@@ -1,0 +1,249 @@
+---
+/** Attraction detail — brief §4.3 reading order. Only publishable attractions get a page. */
+import { ArrowRight, FileText, Check, ArrowUpRight } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import MediaFrame from '../../components/MediaFrame.astro';
+import AttractionCard from '../../components/AttractionCard.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import EnquiryClose from '../../components/EnquiryClose.astro';
+import EmailLink from '../../components/EmailLink.astro';
+import DraftFlag from '../../components/DraftFlag.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import { site, imageFor } from '../../lib/content.ts';
+import { relatedAttractions, type Attraction } from '../../lib/resolve.ts';
+import { contactHref, composeDraft } from '../../lib/enquiry.ts';
+import { siteUrl } from '../../config/build.ts';
+
+export async function getStaticPaths() {
+  return (await site()).attractions.map((a) => ({ params: { slug: a.slug }, props: { id: a.id } }));
+}
+
+const r = await site();
+const a = r.attractionById.get(Astro.props.id) as Attraction;
+const category = r.categoryById.get(a.primaryCategory);
+const venues = a.suitableVenues.map((v) => r.venueById.get(v)).filter((v) => !!v);
+const specs = a.specifications.filter((s) => s.verified || r.preview);
+const projects = r.projects.filter((p) => p.attractions.includes(a.id));
+const related = relatedAttractions(r, a);
+const successor = a.successor ? r.attractionById.get(a.successor) : undefined;
+// Product photographs stay with the product: lead image + thumbnails in the hero (no separate gallery section).
+const [lead, ...moreStills] = a.stills.length ? a.stills : a.videos;
+const videos = a.stills.length ? a.videos : a.videos.slice(1);
+const item = { label: a.name, id: a.slug };
+const specDraft = composeDraft('specification', {}, item);
+const projectDraft = composeDraft('project', {}, item);
+const cover = a.stills.find((m) => !m.placeholder);
+const ogImage = cover ? imageFor(cover)?.src : undefined;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: a.name,
+  description: a.summary,
+  url: new URL(`/attractions/${a.slug}/`, siteUrl).href,
+  brand: { '@type': 'Organization', name: 'Mega Fun Amusements' },
+  ...(category ? { category: category.name } : {}),
+};
+---
+
+<Base title={a.seo.title ?? a.name} description={a.seo.description ?? a.summary} pageType="attraction" ogImage={ogImage} jsonLd={jsonLd}>
+  <section class="border-b border-line">
+    <div class="wrap pt-8 pb-14 lg:pt-10 lg:pb-20">
+      <Breadcrumbs
+        items={[
+          { label: 'Attractions', href: '/attractions/' },
+          ...(category ? [{ label: category.name, href: category.hasPage ? `/attractions/category/${category.slug}/` : `/attractions/#${category.slug}` }] : []),
+          { label: a.name },
+        ]}
+      />
+      {
+        a.retired && (
+          <p class="mt-8 rounded-2xl border border-line-strong bg-white p-5" role="note">
+            This attraction is no longer actively offered.
+            {successor && (<> See <a class="link" href={`/attractions/${successor.slug}/`}>{successor.name}</a>.</>)}
+          </p>
+        )
+      }
+      <div class="mt-10 grid gap-10 lg:mt-14 lg:grid-cols-12 lg:items-center lg:gap-14">
+        <div class="lg:col-span-5">
+          {category && <p class="eyebrow text-blue-700" data-hero-line>{category.name}</p>}
+          <h1 class="t-display mt-5" data-hero-line>{a.name}</h1>
+          <p class="t-lead mt-6 text-muted" data-hero-line>{a.summary}</p>
+          <DraftFlag when={a.draft} label="Draft — awaiting approval" class="mt-4" />
+          {
+            !a.retired && (
+              <div class="mt-10 flex flex-wrap gap-3" data-hero-line>
+                <a href={contactHref({ intent: 'project', source: 'attraction', item: a.slug })} class="btn btn-primary" data-track="project_cta_click" data-track-source="attraction" data-track-item={a.slug}>
+                  Discuss this attraction <ArrowRight class="arrow" aria-hidden="true" />
+                </a>
+                <a href={contactHref({ intent: 'specification', source: 'attraction', item: a.slug })} class="btn btn-outline" data-track="specification_cta_click" data-track-source="attraction" data-track-item={a.slug}>
+                  <FileText aria-hidden="true" /> Request specifications
+                </a>
+              </div>
+            )
+          }
+          <p class="mt-5 text-[0.9rem] text-muted" data-hero-line>
+            Prefer email? <EmailLink class="link" source="attraction" subject={projectDraft.subject} body={projectDraft.body} label="Email about this attraction" />
+          </p>
+        </div>
+        <div class="lg:col-span-7" data-hero-line>
+          {lead?.kind === 'video' ? (
+            <MediaFrame media={lead} aspect="16 / 9" class="rounded-[var(--radius-stage)]" />
+          ) : (
+            <div data-lightbox-item data-gallery="attraction" data-caption={lead?.caption ?? a.name}>
+              <MediaFrame media={lead} aspect="4 / 3" sizes="(min-width:1024px) 55vw, 100vw" eager class="rounded-[var(--radius-stage)]" />
+            </div>
+          )}
+          {
+            moreStills.length > 0 && (
+              <ul class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4" aria-label={`More photographs of ${a.name}`}>
+                {moreStills.map((m) => (
+                  <li data-lightbox-item data-gallery="attraction" data-caption={m.caption ?? a.name}>
+                    <MediaFrame media={m} aspect="4 / 3" sizes="(min-width:1024px) 14vw, 30vw" widths={[320, 640]} class="rounded-xl" />
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+          {
+            videos.map((m) => (
+              <figure class="mt-3">
+                <MediaFrame media={m} aspect="16 / 9" class="rounded-[var(--radius-card)]" />
+                {m.textAlternative && <figcaption class="mt-2 text-[0.9rem] text-muted">{m.textAlternative}</figcaption>}
+              </figure>
+            ))
+          }
+          {lead?.credit && <p class="mt-2 text-[0.8rem] text-muted">Photo: {lead.credit}</p>}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Guest experience + features -->
+  <section class="wrap grid gap-12 py-20 lg:grid-cols-12 lg:py-28" aria-labelledby="h-experience">
+    <div class="lg:col-span-5" data-reveal>
+      <p class="eyebrow text-blue-700">The guest experience</p>
+      <h2 id="h-experience" class="t-h2 mt-5">What guests experience</h2>
+    </div>
+    <div class="lg:col-span-7" data-reveal>
+      <div class="prose-mf text-[1.15rem]">{a.experience.map((p) => <p>{p}</p>)}</div>
+      {
+        a.features.length > 0 && (
+          <ul class="mt-10 grid gap-3 sm:grid-cols-2">
+            {a.features.map((f) => (
+              <li class="flex gap-3 rounded-2xl border border-line bg-white p-4">
+                <Check class="mt-0.5 size-5 shrink-0 text-brand-violet" aria-hidden="true" />
+                {f}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- Formats / variants -->
+  {
+    a.variants.length > 0 && (
+      <section class="border-y border-line bg-white" aria-labelledby="h-formats">
+        <div class="wrap grid gap-10 py-16 lg:grid-cols-12 lg:items-center lg:py-20">
+          <div class="lg:col-span-5" data-reveal>
+            <p class="eyebrow text-blue-700">Formats</p>
+            <h2 id="h-formats" class="t-h3 mt-4">Available formats and variants</h2>
+          </div>
+          <ul class="flex flex-wrap gap-3 lg:col-span-7" data-reveal>
+            {a.variants.map((v) => (
+              <li class="rounded-2xl border border-line-strong px-6 py-4">
+                <span class="font-display text-[1.6rem] font-semibold">{v.name}</span>
+                {v.description && <span class="block text-[0.95rem] text-muted">{v.description}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Venues + specifications -->
+  <section class="wrap grid gap-16 py-20 lg:grid-cols-12 lg:py-28" aria-labelledby="h-specs">
+    <div class="lg:col-span-7" data-reveal>
+      <p class="eyebrow text-blue-700">Specifications</p>
+      <h2 id="h-specs" class="t-h2 mt-5">Planning and installation</h2>
+      {
+        specs.length > 0 ? (
+          <dl class="mt-10 divide-y divide-line border-y border-line">
+            {specs.map((s) => (
+              <div class="grid grid-cols-2 gap-6 py-4">
+                <dt class="text-muted">{s.label}</dt>
+                <dd class="font-semibold">
+                  {s.value} <DraftFlag when={!s.verified} label="Unverified" />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p class="mt-8 max-w-[52ch] text-muted">Detailed specifications and installation requirements are shared on request, matched to your site.</p>
+        )
+      }
+      <div class="mt-8 rounded-[var(--radius-card)] bg-ink-900 p-6 text-on-dark sm:p-8">
+        <p class="font-display text-[1.25rem] font-semibold">Need full technical specifications?</p>
+        <p class="mt-2 text-on-dark-muted">Request the specification pack for {a.name}. The product reference is added to your email subject.</p>
+        <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <a href={contactHref({ intent: 'specification', source: 'attraction', item: a.slug })} class="btn btn-light" data-track="specification_cta_click" data-track-source="attraction" data-track-item={a.slug}>
+            Request specifications <ArrowRight class="arrow" aria-hidden="true" />
+          </a>
+          <span class="on-dark text-[0.9rem] text-on-dark-muted">or <EmailLink class="link" source="attraction" subject={specDraft.subject} body={specDraft.body} label="email the request directly" /></span>
+        </div>
+      </div>
+    </div>
+    {
+      venues.length > 0 && (
+        <aside class="lg:col-span-5" aria-labelledby="h-venues" data-reveal>
+          <h2 id="h-venues" class="text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">Suitable venues</h2>
+          <ul class="mt-4 divide-y divide-line border-y border-line">
+            {venues.map((v) => (
+              <li class="py-4">
+                {v.hasPage ? (
+                  <a href={`/solutions/${v.slug}/`} class="group flex items-center justify-between gap-4 font-semibold">
+                    {v.name}
+                    <ArrowUpRight class="size-4 text-muted group-hover:text-brand-deep" aria-hidden="true" />
+                  </a>
+                ) : (
+                  <span class="font-semibold">{v.name}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+  </section>
+
+
+  <!-- Related installations (derived from project records) -->
+  {
+    projects.length > 0 && (
+      <section class="wrap py-20 lg:py-28" aria-labelledby="h-installs">
+        <h2 id="h-installs" class="t-h2" data-reveal>Where it’s installed</h2>
+        <div class="mt-12 grid gap-x-8 gap-y-14 md:grid-cols-2 lg:grid-cols-3">{projects.map((p) => <ProjectCard project={p} />)}</div>
+      </section>
+    )
+  }
+
+  {
+    related.length > 0 && (
+      <section class="border-t border-line" aria-labelledby="h-related">
+        <div class="wrap py-20 lg:py-28">
+          <h2 id="h-related" class="t-h2" data-reveal>Related attractions</h2>
+          <div class="mt-12 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">{related.map((b) => <AttractionCard attraction={b} />)}</div>
+        </div>
+      </section>
+    )
+  }
+
+  <div class="pt-3">
+    <EnquiryClose source="attraction" item={a.slug} title={`Planning a venue with ${a.name}?`} cta="Discuss this attraction" />
+  </div>
+  <Lightbox />
+</Base>

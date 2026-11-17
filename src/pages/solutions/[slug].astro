@@ -1,0 +1,140 @@
+---
+/**
+ * Solution / venue page — brief §4.4. Relevant attractions are DERIVED from
+ * Attraction.suitableVenues; this page never keeps its own list.
+ */
+import { ArrowRight } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import AttractionCard from '../../components/AttractionCard.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import EnquiryClose from '../../components/EnquiryClose.astro';
+import DraftFlag from '../../components/DraftFlag.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import { site } from '../../lib/content.ts';
+import type { Venue } from '../../lib/resolve.ts';
+
+export async function getStaticPaths() {
+  return (await site()).venues.filter((v) => v.hasPage).map((v) => ({ params: { slug: v.slug }, props: { id: v.id } }));
+}
+const r = await site();
+const v = r.venueById.get(Astro.props.id) as Venue;
+const combos = v.combinations
+  .filter((c) => c.validated || r.preview)
+  .map((c) => ({ ...c, items: c.attractions.map((id) => r.attractionById.get(id)).filter((a) => !!a) }))
+  .filter((c) => c.items.length > 0);
+// Group derived attractions by their primary category.
+const groups = r.categories
+  .map((c) => ({ c, items: v.attractions.filter((a) => a.primaryCategory === c.id) }))
+  .filter((g) => g.items.length);
+---
+
+<Base title={v.seo.title ?? `Attractions for ${v.name.toLowerCase()}`} description={v.seo.description ?? v.summary} pageType="solution">
+  <PageHeader crumbs={[{ label: 'Solutions', href: '/solutions/' }, { label: v.name }]} eyebrow="Venue solution" title={v.name} lead={v.summary}>
+    <DraftFlag when={v.draft} class="mt-4" />
+  </PageHeader>
+
+  <!-- Venue context and operator needs -->
+  <section class="wrap grid gap-12 py-20 lg:grid-cols-12 lg:py-28" aria-labelledby="h-context">
+    <div class="lg:col-span-5" data-reveal>
+      <p class="eyebrow text-blue-700">The venue</p>
+      <h2 id="h-context" class="t-h2 mt-5">What operators need</h2>
+      <div class="prose-mf mt-6 text-muted">{v.context.map((p) => <p>{p}</p>)}</div>
+    </div>
+    <ul class="grid gap-4 sm:grid-cols-2 lg:col-span-7">
+      {
+        v.needs.map((n, i) => (
+          <li class="rounded-[var(--radius-card)] border border-line bg-white p-6" data-reveal>
+            <span class="font-display text-[0.9rem] font-semibold text-brand-violet tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="mt-3 text-[1.15rem] font-semibold">{n.title}</h3>
+            <p class="mt-2 text-muted">{n.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- Derived attractions -->
+  <section class="border-y border-line bg-white" aria-labelledby="h-attr">
+    <div class="wrap py-20 lg:py-28">
+      <h2 id="h-attr" class="t-h2" data-reveal>Attractions suited to {v.name.toLowerCase()}</h2>
+      {
+        groups.map((g) => (
+          <div class="mt-14">
+            <h3 class="text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">{g.c.name}</h3>
+            <div class="mt-6 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">{g.items.map((a) => <AttractionCard attraction={a} />)}</div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  {
+    combos.length > 0 && (
+      <section class="wrap py-20 lg:py-28" aria-labelledby="h-combos">
+        <h2 id="h-combos" class="t-h2" data-reveal>Attraction combinations</h2>
+        <ul class="mt-12 grid gap-6 md:grid-cols-2">
+          {combos.map((c) => (
+            <li class="rounded-[var(--radius-card)] border border-line p-8" data-reveal>
+              <h3 class="t-h3">{c.title} <DraftFlag when={!c.validated} /></h3>
+              <p class="mt-3 text-muted">{c.text}</p>
+              <p class="mt-5 flex flex-wrap gap-2">
+                {c.items.map((a) => <a href={`/attractions/${a.slug}/`} class="rounded-full bg-mist px-3 py-1 text-[0.9rem] hover:bg-line">{a.name}</a>)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    v.verifiedPlanning.length > 0 && (
+      <section class="px-3 sm:px-4" aria-labelledby="h-planning">
+        <div class="stage on-dark">
+          <div class="wrap grid gap-12 py-20 lg:grid-cols-12 lg:py-28">
+            <div class="lg:col-span-4" data-reveal>
+              <p class="eyebrow text-blue-300">Planning</p>
+              <h2 id="h-planning" class="t-h2 mt-5">Points to plan for</h2>
+            </div>
+            <ol class="grid gap-3 sm:grid-cols-2 lg:col-span-8">
+              {v.verifiedPlanning.map((p, i) => (
+                <li class="rounded-[var(--radius-card)] border border-white/10 bg-white/[0.03] p-6 lg:p-8" data-reveal>
+                  <span class="font-display text-[0.9rem] font-semibold text-blue-300 tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                  <h3 class="mt-3 text-[1.15rem] font-semibold text-white">{p.title} <DraftFlag when={!p.verified} label="Unverified" /></h3>
+                  <p class="mt-2 text-on-dark-muted">{p.text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    v.projects.length > 0 && (
+      <section class="wrap py-20 lg:py-28" aria-labelledby="h-proj">
+        <h2 id="h-proj" class="t-h2" data-reveal>Related projects</h2>
+        <div class="mt-12 grid gap-x-8 gap-y-14 md:grid-cols-2 lg:grid-cols-3">{v.projects.map((p) => <ProjectCard project={p} />)}</div>
+      </section>
+    )
+  }
+
+  {
+    (
+      <section class="wrap pb-20" aria-label="Turnkey delivery">
+        <a href="/turnkey-engineering/" class="group flex flex-wrap items-center justify-between gap-6 rounded-[var(--radius-card)] border border-line bg-white p-8 transition-shadow hover:shadow-lift lg:p-10">
+          <span>
+            <span class="block text-[0.8rem] font-semibold tracking-[0.12em] text-muted uppercase">Turnkey &amp; Engineering</span>
+            <span class="t-h3 mt-2 block">How a project is delivered, from concept to commissioning</span>
+          </span>
+          <ArrowRight class="size-6 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+        </a>
+      </section>
+    )
+  }
+
+  <div class="pt-3"><EnquiryClose source="solution" item={v.slug} title={`Planning attractions for ${v.name.toLowerCase()}?`} /></div>
+  <Lightbox />
+</Base>

@@ -1,0 +1,144 @@
+---
+/** Case study — brief §4.7 reading order. Only case-study records that pass the gate get a page. */
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import MediaFrame from '../../components/MediaFrame.astro';
+import AttractionCard from '../../components/AttractionCard.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import ModelTag from '../../components/ModelTag.astro';
+import EnquiryClose from '../../components/EnquiryClose.astro';
+import DraftFlag from '../../components/DraftFlag.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import { site, getEntry, render, imageFor } from '../../lib/content.ts';
+import type { Project } from '../../lib/resolve.ts';
+
+export async function getStaticPaths() {
+  return (await site()).projects.filter((p) => p.hasPage).map((p) => ({ params: { slug: p.slug! }, props: { id: p.id } }));
+}
+const r = await site();
+const p = r.projects.find((x) => x.id === Astro.props.id) as Project;
+const entry = await getEntry('projects', p.id);
+const { Content } = entry ? await render(entry) : { Content: undefined };
+const hasBody = !!entry?.body?.trim();
+const attractions = p.attractions.map((id) => r.attractionById.get(id)).filter((a) => !!a);
+const venueNames = p.venues.map((v) => r.venueById.get(v)?.name).filter(Boolean);
+const others = r.projects.filter((x) => x.hasPage && x.id !== p.id).slice(0, 3);
+const meta = [
+  ['Client', p.client],
+  ['Venue', venueNames.join(', ')],
+  ['Location', p.location],
+  ['Year', p.year?.toString()],
+].filter(([, v]) => v) as [string, string][];
+const [hero, ...gallery] = p.mediaItems;
+const og = hero && !hero.placeholder ? imageFor(hero)?.src : undefined;
+---
+
+<Base title={p.seo.title ?? p.title} description={p.seo.description ?? p.summary} pageType="case-study" ogImage={og} ogType="article">
+  <section class="wrap pt-8 lg:pt-10">
+    <Breadcrumbs items={[{ label: 'Projects', href: '/projects/' }, { label: p.title }]} />
+    <div class="mt-10 grid gap-8 lg:mt-14 lg:grid-cols-12 lg:items-end">
+      <div class="lg:col-span-8">
+        <p class="eyebrow text-blue-700" data-hero-line>Case study</p>
+        <h1 class="t-display mt-5" data-hero-line>{p.title}</h1>
+        <p class="t-lead mt-6 max-w-[56ch] text-muted" data-hero-line>{p.summary}</p>
+        <DraftFlag when={p.draft} class="mt-4" />
+      </div>
+      {
+        meta.length > 0 && (
+          <dl class="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-6 lg:col-span-4" data-hero-line>
+            {meta.map(([k, v]) => (
+              <div>
+                <dt class="text-[0.8rem] font-semibold tracking-[0.1em] text-muted uppercase">{k}</dt>
+                <dd class="mt-1 font-semibold">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        )
+      }
+    </div>
+  </section>
+
+  <div class="px-3 pt-12 sm:px-4" data-hero-line>
+    <div data-lightbox-item data-gallery="case" data-caption={hero?.caption ?? p.title}>
+      <MediaFrame media={hero} aspect="21 / 9" sizes="100vw" eager class="rounded-[var(--radius-stage)]" />
+    </div>
+  </div>
+
+  <article class="wrap grid gap-16 py-20 lg:grid-cols-12 lg:py-28">
+    <div class="space-y-16 lg:col-span-7">
+      <section aria-labelledby="h-brief" data-reveal>
+        <h2 id="h-brief" class="t-h3">The brief</h2>
+        <p class="prose-mf mt-4">{p.brief}</p>
+      </section>
+      <section aria-labelledby="h-scope" data-reveal>
+        <h2 id="h-scope" class="t-h3">Scope</h2>
+        <ul class="mt-4 space-y-2">{p.scope.map((s) => <li class="flex gap-3"><span class="mt-2.5 size-1.5 shrink-0 rounded-full bg-brand-violet" aria-hidden="true" />{s}</li>)}</ul>
+      </section>
+      <section aria-labelledby="h-delivery" data-reveal>
+        <h2 id="h-delivery" class="t-h3">Delivery</h2>
+        <ol class="mt-6 divide-y divide-line border-y border-line">
+          {p.delivery.map((d) => (
+            <li class="grid gap-2 py-5 sm:grid-cols-[12rem_1fr]">
+              <span class="font-semibold">{d.stage}</span>
+              <span><span class="block text-muted">{d.detail}</span><span class="mt-2 inline-block"><ModelTag model={d.model} /></span></span>
+            </li>
+          ))}
+        </ol>
+      </section>
+      {hasBody && Content && <div class="prose-mf" data-reveal><Content /></div>}
+      {
+        p.outcome && (
+          <section aria-labelledby="h-outcome" class="rounded-[var(--radius-card)] bg-ink-900 p-8 text-on-dark" data-reveal>
+            <h2 id="h-outcome" class="t-h3 text-white">Outcome</h2>
+            <p class="mt-3 text-on-dark-muted">{p.outcome}</p>
+          </section>
+        )
+      }
+    </div>
+    {
+      gallery.length > 0 && (
+        <aside class="lg:col-span-5" aria-label="Project media">
+          <ul class="grid gap-6">
+            {gallery.map((m) => (
+              <li data-reveal>
+                <figure>
+                  <div data-lightbox-item data-gallery="case" data-caption={m.caption ?? p.title}>
+                    <MediaFrame media={m} aspect="4 / 3" sizes="(min-width:1024px) 38vw, 100vw" class="rounded-[var(--radius-card)]" />
+                  </div>
+                  {(m.caption || m.credit) && (
+                    <figcaption class="mt-3 text-[0.9rem] text-muted">
+                      {m.caption}
+                      {m.credit && <span class="block text-[0.8rem]">Credit: {m.credit}</span>}
+                    </figcaption>
+                  )}
+                </figure>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+  </article>
+
+  {
+    attractions.length > 0 && (
+      <section class="border-t border-line bg-white" aria-labelledby="h-used">
+        <div class="wrap py-20 lg:py-28">
+          <h2 id="h-used" class="t-h2" data-reveal>Attractions in this project</h2>
+          <div class="mt-12 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">{attractions.map((a) => <AttractionCard attraction={a} />)}</div>
+        </div>
+      </section>
+    )
+  }
+  {
+    others.length > 0 && (
+      <section class="wrap py-20 lg:py-28" aria-labelledby="h-more">
+        <h2 id="h-more" class="t-h2" data-reveal>More case studies</h2>
+        <div class="mt-12 grid gap-x-8 gap-y-14 md:grid-cols-2 lg:grid-cols-3">{others.map((o) => <ProjectCard project={o} />)}</div>
+      </section>
+    )
+  }
+
+  <div class="pt-3"><EnquiryClose source="case-study" item={p.slug} title="Planning something similar?" cta="Discuss a similar project" /></div>
+  <Lightbox />
+</Base>

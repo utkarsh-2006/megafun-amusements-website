@@ -1,0 +1,26 @@
+name: "Haunted House"
+slug: haunted-house
+operationalStatus: active
+status: review
+primaryCategory: themed-walkthroughs
+secondaryCategories: []
+summary: "A horror-themed walkthrough with sensor-triggered effects."
+experience:
+  - "Guests follow a route through themed horror scenes; sensors detect them and trigger lighting, sound and figure effects along the way."
+features:
+  - "Sensor-triggered effects"
+  - "PLC-controlled show sequence"
+variants: []
+suitableVenues: []
+media:
+  - "haunted-house-still-1"
+  - "haunted-house-still-2"
+specifications:
+  - label: "Carpet area"
+    value: "600 sq ft"
+    verified: false
+  - label: "Control"
+    value: "Sensors and PLC"
+    verified: false
+related: []
+sourceNote: "Existing site www.megafunamusements.com (read 2026-11-17)"

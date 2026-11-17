@@ -1,0 +1,67 @@
+---
+/**
+ * Closing enquiry section (brief §4.1 "Enquiry close"): Discuss a Project first, with
+ * existing-customer and general routes alongside so nobody is framed as a new buyer.
+ */
+import { ArrowRight, Wrench, MessageSquare, Phone } from '@lucide/astro';
+import Ribbon from './Ribbon.astro';
+import EmailLink from './EmailLink.astro';
+import { contactHref, type Source } from '../lib/enquiry.ts';
+import { publicContact } from '../config/company.ts';
+
+interface Props {
+  title?: string;
+  lead?: string;
+  source: Source;
+  item?: string;
+  /** Primary CTA label */
+  cta?: string;
+}
+const {
+  title = 'Have a venue or project in mind?',
+  lead = 'Tell us about the site, the audience and the timeline. We will prepare a draft email you can review and send.',
+  source,
+  item,
+  cta = 'Discuss a Project',
+} = Astro.props;
+---
+
+<section class="px-3 pb-3 sm:px-4 sm:pb-4" aria-labelledby="enquiry-close">
+  <div class="stage on-dark">
+    <Ribbon class="pointer-events-none absolute -right-40 -bottom-24 w-[900px] max-w-none text-white/60 opacity-70 sm:-right-24 lg:w-[1100px]" id="close-ribbon" />
+    <div class="wrap relative grid gap-12 py-20 lg:grid-cols-12 lg:py-28">
+      <div class="lg:col-span-7" data-reveal>
+        <p class="eyebrow text-blue-300">Start a conversation</p>
+        <h2 id="enquiry-close" class="t-display mt-5 max-w-[16ch]">{title}</h2>
+        <p class="t-lead mt-6 max-w-[48ch] text-on-dark-muted">{lead}</p>
+        <div class="mt-10 flex flex-wrap gap-3">
+          <a href={contactHref({ intent: 'project', source, item })} class="btn btn-light" data-track="project_cta_click" data-track-source={source} data-track-item={item}>
+            {cta} <ArrowRight class="arrow" aria-hidden="true" />
+          </a>
+          <a href={`tel:${publicContact.phone.tel}`} class="btn btn-ghost-dark" data-track="phone_click" data-track-source={source}>
+            <Phone aria-hidden="true" /> {publicContact.phone.display}
+          </a>
+        </div>
+      </div>
+      <ul class="grid gap-3 self-end lg:col-span-5" data-reveal>
+        <li>
+          <a href={contactHref({ intent: 'service', source })} class="group flex items-center gap-4 rounded-2xl border border-white/15 bg-white/[0.04] p-5 transition-colors hover:border-white/40 hover:bg-white/[0.07]">
+            <Wrench class="size-5 shrink-0 text-blue-300" aria-hidden="true" />
+            <span class="flex-1"><span class="block font-semibold text-white">Existing customer or service</span><span class="text-[0.95rem] text-on-dark-muted">Support for an installed attraction or documentation.</span></span>
+            <ArrowRight class="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+          </a>
+        </li>
+        <li>
+          <a href={contactHref({ intent: 'general', source })} class="group flex items-center gap-4 rounded-2xl border border-white/15 bg-white/[0.04] p-5 transition-colors hover:border-white/40 hover:bg-white/[0.07]">
+            <MessageSquare class="size-5 shrink-0 text-magenta-300" aria-hidden="true" />
+            <span class="flex-1"><span class="block font-semibold text-white">General enquiry</span><span class="text-[0.95rem] text-on-dark-muted">Suppliers, partners and everything else.</span></span>
+            <ArrowRight class="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+          </a>
+        </li>
+        <li class="px-1 pt-2 text-[0.95rem] text-on-dark-muted">
+          Or email <EmailLink class="link" source={source} />
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

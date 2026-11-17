@@ -1,0 +1,17 @@
+name: "Amusement & theme parks"
+slug: amusement-parks
+summary: "Outdoor and indoor parks adding new attractions or themed zones."
+context:
+  - "Park operators plan attractions around guest flow, ride capacity and how a new attraction fits an existing themed zone."
+  - "They need a supplier that can take an attraction from selection through installation and commissioning on an operating site."
+needs:
+  - title: "Throughput"
+    text: "Attractions sized for park visitor volumes."
+  - title: "Theming"
+    text: "Attractions that fit an existing zone or story."
+  - title: "Delivery on a live site"
+    text: "Installation and commissioning planned around park operations."
+planning: []
+combinations: []
+order: 1
+status: review

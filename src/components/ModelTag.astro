@@ -1,0 +1,14 @@
+---
+/** Labels who delivers a capability (brief §4.5): in-house, partner or externally sourced. */
+interface Props {
+  model: 'in_house' | 'partner' | 'external';
+  dark?: boolean;
+}
+const { model, dark = false } = Astro.props;
+const label = { in_house: 'In-house', partner: 'Partner-delivered', external: 'Externally sourced' }[model];
+const dot = { in_house: 'bg-brand-blue', partner: 'bg-brand-violet', external: 'bg-brand-magenta' }[model];
+---
+
+<span class:list={['inline-flex items-center gap-2 rounded-full border px-2.5 py-0.5 text-[0.75rem] font-semibold', dark ? 'border-white/20 text-on-dark' : 'border-line-strong text-text']}>
+  <span class:list={['size-1.5 rounded-full', dot]} aria-hidden="true"></span>{label}
+</span>

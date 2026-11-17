@@ -1,0 +1,26 @@
+---
+/**
+ * The supplied Mega Fun Amusements logo (transparent version), unaltered except for
+ * trimming empty margin. Designed for light backgrounds — on dark surfaces place it on
+ * a light plate (`plate`), never recolour it.
+ */
+import { Image } from 'astro:assets';
+import logo from '../assets/brand/megafun-logo.png';
+
+interface Props {
+  class?: string;
+  eager?: boolean;
+  plate?: boolean;
+}
+const { class: cls = '', eager = false, plate = false } = Astro.props;
+---
+
+{
+  plate ? (
+    <span class="inline-flex rounded-2xl bg-white px-4 py-3">
+      <Image src={logo} alt="Mega Fun Amusements" widths={[240, 480]} sizes="240px" class={cls} loading={eager ? 'eager' : 'lazy'} />
+    </span>
+  ) : (
+    <Image src={logo} alt="Mega Fun Amusements" widths={[180, 360, 540]} sizes="180px" class={cls} loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : undefined} />
+  )
+}

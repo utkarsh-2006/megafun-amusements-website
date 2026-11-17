@@ -1,0 +1,66 @@
+---
+/**
+ * Privacy — brief §4.12. This text only describes how this website is built; it makes
+ * no legal assurances. It MUST be reviewed and approved by the company/legal advisers
+ * before analytics are enabled (see docs/COMPANY_FACTS_TO_CONFIRM.md).
+ */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import EmailLink from '../components/EmailLink.astro';
+import DraftFlag from '../components/DraftFlag.astro';
+import { analytics, analyticsEnabled } from '../config/analytics.ts';
+import { company } from '../config/company.ts';
+
+/** Flip to true once the company and its legal advisers approve this page. */
+const legalApproved = false;
+---
+
+<Base title="Privacy" description="How the Mega Fun Amusements website handles information." pageType="privacy">
+  <PageHeader crumbs={[{ label: 'Privacy' }]} title="Privacy" lead="How this website handles information.">
+    <DraftFlag when={!legalApproved} label="Awaiting company & legal review" class="mt-4" />
+  </PageHeader>
+  <section class="wrap py-16 lg:py-24">
+    <div class="prose-mf">
+      <h2>Contacting us</h2>
+      <p>
+        This website has no forms that send information to us. When you use the contact page, your message is assembled in your own browser and opened in your
+        email app or webmail service. Nothing is sent until you choose to send it from there, and we receive only what you send.
+      </p>
+      <p>Contact details and context passed between pages (for example, which attraction you were viewing) are not stored by this website.</p>
+
+      <h2>WhatsApp</h2>
+      <p>
+        The contact page offers a WhatsApp option. Selecting it opens WhatsApp with a message prepared from what you entered on the page. Nothing is sent until you
+        choose to send it in WhatsApp. Messages sent through WhatsApp are handled by WhatsApp under its own terms and privacy policy, and we receive only what you
+        send.
+      </p>
+
+      <h2>Cookies</h2>
+      <p>This website does not set cookies of its own.</p>
+
+      <h2>Analytics</h2>
+      {
+        analyticsEnabled ? (
+          <p>
+            We count how often pages are visited and how often contact options are used, using {analytics.provider}. These counts are aggregate. They never include
+            your name, email address, phone number or message.
+          </p>
+        ) : (
+          <p>Analytics are not currently enabled on this website.</p>
+        )
+      }
+
+      <h2>Videos</h2>
+      <p>Videos hosted on external services do not load until you press play. Once loaded, the video service may process information under its own policy.</p>
+
+      <h2>Map</h2>
+      <p>The contact page shows our office on an embedded OpenStreetMap map. The map loads from openstreetmap.org when you scroll to it, and OpenStreetMap may process information under its own policy.</p>
+
+      <h2>Hosting</h2>
+      <p>The website is served by a hosting and content-delivery provider, which processes technical information such as IP addresses to deliver pages.</p>
+
+      <h2>Questions</h2>
+      <p>For questions about privacy, email <EmailLink source="privacy" subject={`Privacy question — ${company.name} website`} />.</p>
+    </div>
+  </section>
+</Base>

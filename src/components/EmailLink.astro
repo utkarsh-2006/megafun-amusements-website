@@ -1,0 +1,25 @@
+---
+/**
+ * Mailto link with basic entity obfuscation against naive scrapers. It still renders as a
+ * normal, readable, clickable address without JavaScript. It does not prevent harvesting.
+ */
+import { publicContact } from '../config/company.ts';
+import { mailtoHref } from '../lib/enquiry.ts';
+
+interface Props {
+  class?: string;
+  subject?: string;
+  body?: string;
+  /** analytics source (page area) */
+  source?: string;
+  /** Visible text; defaults to the address itself. */
+  label?: string;
+}
+const { class: cls = '', subject, body, source = 'page', label } = Astro.props;
+const ent = (s: string) => [...s].map((c) => `&#${c.codePointAt(0)};`).join('');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const href = mailtoHref(publicContact.email, { subject, body });
+const html = `<a href="${ent(href)}" class="${esc(cls)}" data-track="mailto_open" data-track-source="${esc(source)}">${label ? esc(label) : ent(publicContact.email)}</a>`;
+---
+
+<Fragment set:html={html} />

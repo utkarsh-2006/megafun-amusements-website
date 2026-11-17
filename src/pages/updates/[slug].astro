@@ -1,0 +1,111 @@
+---
+/** Update article — brief §4.10 reading order. Add one by adding src/content/updates/<slug>.md. */
+import { ArrowLeft } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import MediaFrame from '../../components/MediaFrame.astro';
+import AttractionCard from '../../components/AttractionCard.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import NewsCard from '../../components/NewsCard.astro';
+import EnquiryClose from '../../components/EnquiryClose.astro';
+import DraftFlag from '../../components/DraftFlag.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import { site, getEntry, render, formatDate, imageFor } from '../../lib/content.ts';
+import type { Article } from '../../lib/resolve.ts';
+import { siteUrl } from '../../config/build.ts';
+
+export async function getStaticPaths() {
+  return (await site()).news.map((a) => ({ params: { slug: a.id }, props: { id: a.id } }));
+}
+const r = await site();
+const a = r.news.find((n) => n.id === Astro.props.id) as Article;
+const entry = await getEntry('updates', a.id);
+const { Content } = await render(entry!);
+const attractions = a.relatedAttractions.map((id) => r.attractionById.get(id)).filter((x) => !!x);
+const projects = a.relatedProjects.map((id) => r.projects.find((p) => p.id === id)).filter((x) => !!x);
+// Related updates: same type first, then the most recent others.
+const others = r.news.filter((n) => n.id !== a.id);
+const relatedUpdates = [...others.filter((n) => a.type && n.type === a.type), ...others.filter((n) => !a.type || n.type !== a.type)].slice(0, 3);
+const og = !a.coverItem.placeholder ? imageFor(a.coverItem)?.src : undefined;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'NewsArticle',
+  headline: a.title,
+  datePublished: a.date.toISOString(),
+  description: a.summary,
+  url: new URL(`/updates/${a.id}/`, siteUrl).href,
+  publisher: { '@type': 'Organization', name: 'Mega Fun Amusements' },
+  ...(og ? { image: new URL(og, siteUrl).href } : {}),
+};
+---
+
+<Base title={a.seo.title ?? a.title} description={a.seo.description ?? a.summary} pageType="update" ogType="article" ogImage={og} jsonLd={jsonLd}>
+  <article>
+    <header class="wrap pt-8 lg:pt-10">
+      <Breadcrumbs items={[{ label: 'Updates', href: '/updates/' }, { label: a.title }]} />
+      <div class="mx-auto mt-12 max-w-3xl lg:mt-16">
+        <p class="flex flex-wrap gap-x-4 text-[0.95rem] text-muted" data-hero-line>
+          <time datetime={a.date.toISOString().slice(0, 10)}>{formatDate(a.date)}</time>
+          {a.type && <span class="font-semibold text-blue-700">{a.type}</span>}
+        </p>
+        <h1 class="t-display mt-5" data-hero-line>{a.title}</h1>
+        <p class="t-lead mt-6 text-muted" data-hero-line>{a.summary}</p>
+        <DraftFlag when={a.draft} label="Draft — awaiting approval" class="mt-4" />
+      </div>
+    </header>
+    <div class="wrap mt-12" data-hero-line>
+      <figure class="mx-auto max-w-5xl">
+        <MediaFrame media={a.coverItem} aspect="16 / 9" sizes="(min-width:1100px) 1024px, 100vw" eager class="rounded-[var(--radius-stage)]" />
+        {a.coverItem.caption && <figcaption class="mt-3 text-[0.9rem] text-muted">{a.coverItem.caption}</figcaption>}
+      </figure>
+    </div>
+    <div class="wrap py-16 lg:py-20">
+      <div class="prose-mf mx-auto text-[1.125rem]"><Content /></div>
+      {
+        a.mediaItems.length > 0 && (
+          <ul class="mx-auto mt-16 grid max-w-5xl gap-6 sm:grid-cols-2">
+            {a.mediaItems.map((m) => (
+              <li>
+                <figure>
+                  <div data-lightbox-item data-gallery="article" data-caption={m.caption ?? a.title}>
+                    <MediaFrame media={m} aspect="4 / 3" sizes="(min-width:640px) 45vw, 100vw" class="rounded-[var(--radius-card)]" />
+                  </div>
+                  {m.caption && <figcaption class="mt-3 text-[0.9rem] text-muted">{m.caption}</figcaption>}
+                </figure>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <p class="mx-auto mt-16 max-w-[68ch]">
+        <a href="/updates/" class="link inline-flex items-center gap-2"><ArrowLeft class="size-4" aria-hidden="true" /> All updates</a>
+      </p>
+    </div>
+  </article>
+
+  {
+    (attractions.length > 0 || projects.length > 0) && (
+      <section class="border-t border-line bg-white" aria-labelledby="h-rel">
+        <div class="wrap py-20 lg:py-28">
+          <h2 id="h-rel" class="t-h2">Featured in this update</h2>
+          <div class="mt-12 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+            {attractions.map((x) => <AttractionCard attraction={x} />)}
+            {projects.map((p) => <ProjectCard project={p} />)}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    relatedUpdates.length > 0 && (
+      <section class="wrap py-20 lg:py-28" aria-labelledby="h-more">
+        <h2 id="h-more" class="t-h2">More updates</h2>
+        <div class="mt-12 grid gap-x-8 gap-y-16 md:grid-cols-2 lg:grid-cols-3">{relatedUpdates.map((n) => <NewsCard article={n} />)}</div>
+      </section>
+    )
+  }
+
+  <div class="pt-3"><EnquiryClose source="updates" item={a.id} /></div>
+  <Lightbox />
+</Base>
